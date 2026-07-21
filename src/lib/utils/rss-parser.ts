@@ -419,37 +419,12 @@ export async function parseRssFeed(url: string): Promise<RssItem[]> {
 }
 
 
-export function findMatchingKeywordsRegex(keywords: string[], rssItem: RssItem): string[] {
-    const escRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const pattern = new RegExp(`(${keywords.map((k) => escRegex(k.toLowerCase())).join("|")})`, "i");
+export function findMatchingKeywordIds(keywords: { id: number; name: string }[], rssItem: RssItem) {
+    const content = `${rssItem.title ?? ""}\n${rssItem.description ?? ""}`.toLowerCase();
 
-    const findMatches = (text: string | null): Set<string> => {
-        if (typeof text !== "string") {
-            return new Set<string>();
-        }
-
-        const matches = new Set<string>();
-        const lower = text.toLowerCase();
-        const globalPattern = new RegExp(pattern.source, pattern.flags + "g");
-
-        let m: RegExpExecArray | null;
-        while ((m = globalPattern.exec(lower)) !== null) {
-            matches.add(m[1]);
-            if (m.index === globalPattern.lastIndex) {
-                globalPattern.lastIndex++;
-            }
-        }
-        return matches;
-    };
-
-    const result = new Set<string>();
-    for (const value of Object.values(rssItem)) {
-        for (const match of findMatches(value)) {
-            result.add(match);
-        }
-    }
-
-    return Array.from(result);
+    return keywords
+        .filter((keyword) => content.includes(keyword.name.toLowerCase()))
+        .map((keyword) => keyword.id);
 }
 
 

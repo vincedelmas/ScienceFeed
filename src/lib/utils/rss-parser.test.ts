@@ -1,12 +1,41 @@
 import {describe, expect, test} from "bun:test";
 import {
     fetchSafeRssResponse,
+    findMatchingKeywordIds,
     isPublicIpAddress,
     parseAllowedFeedUrl,
     requestPinnedUrl,
     resolvePublicAddress,
     RssFetchError,
 } from "./rss-parser";
+
+
+describe("keyword matching", () => {
+    const rssItem = {
+        title: "AI transforms materials science",
+        description: "This AI model predicts new compounds.",
+        link: "https://nature.example/articles/123",
+    };
+
+    test("returns the original ID for a mixed-case keyword", () => {
+        expect(findMatchingKeywordIds([
+            { id: 42, name: "Science" },
+        ], rssItem)).toEqual([42]);
+    });
+
+    test("matches overlapping keywords independently", () => {
+        expect(findMatchingKeywordIds([
+            { id: 1, name: "AI" },
+            { id: 2, name: "AI model" },
+        ], rssItem)).toEqual([1, 2]);
+    });
+
+    test("does not match a keyword found only in the article URL", () => {
+        expect(findMatchingKeywordIds([
+            { id: 1, name: "nature" },
+        ], rssItem)).toEqual([]);
+    });
+});
 
 
 describe("RSS URL security", () => {

@@ -1,8 +1,13 @@
 import pLimit from "p-limit";
 import {db} from "@/lib/server/database/db";
 import {and, eq, inArray, sql} from "drizzle-orm";
+import {cleanHtmlWithRegex, findMatchingKeywordIds, parseRssFeed, RssFetchError, RssItem} from "@/lib/utils/rss-parser";
 import {article, keyword, rssFeed, user, userArticle, userArticleKeyword, userRssFeed} from "@/lib/server/database/schema";
-import {cleanHtmlWithRegex, findMatchingKeywordsRegex, parseRssFeed, RssFetchError, RssItem} from "@/lib/utils/rss-parser";
+
+
+const ACS_FEED_CONCURRENCY = 1;
+const ACS_FEED_DELAY_MS = 10_000;
+const GENERAL_FEED_CONCURRENCY = 4;
 
 
 type Feed = {
@@ -11,6 +16,11 @@ type Feed = {
     journal: string;
     publisher: string;
 }
+
+type UAItem = {
+    articleId?: number;
+    articleLink: string;
+};
 
 export type FetchArticlesResult = {
     processedFeeds: number;
@@ -22,10 +32,6 @@ export type FetchArticlesResult = {
         publisher: string;
     }[];
 }
-
-const ACS_FEED_CONCURRENCY = 1;
-const ACS_FEED_DELAY_MS = 10_000;
-const GENERAL_FEED_CONCURRENCY = 4;
 
 
 const sleep = (ms: number) => {
@@ -194,24 +200,15 @@ export async function fetchAndFilterArticles(targetUserId?: number): Promise<Fet
 
     for (const user of selectedUsers) {
         const feedIds = userToFeedIds.get(user.id) ?? [];
+
         const activeKws = userToActiveKeywords.get(user.id) ?? [];
         if (activeKws.length === 0) continue;
 
-        const activeKwNames = activeKws.map((k) => k.name);
-        const userArticleSet =
-            userToArticleSet.get(user.id) ?? new Set<number>();
-
-        const pendingArticles: {
-            rssFeedId: number;
-            title: string;
-            link: string;
-            summary: string;
-        }[] = [];
-
-        type UAItem = { articleLink: string; articleId?: number };
         const pendingUA: UAItem[] = [];
+        const linkToMatchedKeywordIds = new Map<string, Set<number>>();
 
-        const linkToMatchedKwNames = new Map<string, Set<string>>();
+        const userArticleSet = userToArticleSet.get(user.id) ?? new Set<number>();
+        const pendingArticles: { rssFeedId: number; title: string; link: string; summary: string }[] = [];
 
         for (const feedId of feedIds) {
             const bundle = parsedById.get(feedId);
@@ -221,12 +218,13 @@ export async function fetchAndFilterArticles(targetUserId?: number): Promise<Fet
             for (const item of parsed) {
                 if (!item.title || !item.link) continue;
 
-                const matched = findMatchingKeywordsRegex(activeKwNames, item);
-                if (!matched || matched.length === 0) continue;
+                const matchedKeywordIds = findMatchingKeywordIds(activeKws, item);
+                if (matchedKeywordIds.length === 0) continue;
 
-                const set = linkToMatchedKwNames.get(item.link) ?? new Set<string>();
-                matched.forEach((m: string) => set.add(m));
-                linkToMatchedKwNames.set(item.link, set);
+                const set = linkToMatchedKeywordIds.get(item.link) ?? new Set<number>();
+                matchedKeywordIds.forEach((keywordId) => set.add(keywordId));
+
+                linkToMatchedKeywordIds.set(item.link, set);
 
                 if (!linkToArticleId.has(item.link)) {
                     pendingArticles.push({
@@ -241,11 +239,11 @@ export async function fetchAndFilterArticles(targetUserId?: number): Promise<Fet
             }
         }
 
-        if (pendingArticles.length === 0 && pendingUA.length === 0 && linkToMatchedKwNames.size === 0) {
+        if (pendingArticles.length === 0 && pendingUA.length === 0 && linkToMatchedKeywordIds.size === 0) {
             continue;
         }
 
-        await db.transaction(async (tx) => {
+        db.transaction((tx) => {
             if (pendingArticles.length > 0) {
                 const seenLinks = new Set<string>();
                 const toInsert = pendingArticles.filter((a) => {
@@ -256,15 +254,17 @@ export async function fetchAndFilterArticles(targetUserId?: number): Promise<Fet
                 });
 
                 if (toInsert.length > 0) {
-                    await tx
+                    tx
                         .insert(article)
                         .values(toInsert)
+                        .run();
 
                     const justLinks = toInsert.map((a) => a.link);
-                    const newArticles = await tx
+                    const newArticles = tx
                         .select()
                         .from(article)
-                        .where(inArray(article.link, justLinks));
+                        .where(inArray(article.link, justLinks))
+                        .all();
 
                     for (const a of newArticles) {
                         linkToArticleId.set(a.link, a.id);
@@ -276,6 +276,7 @@ export async function fetchAndFilterArticles(targetUserId?: number): Promise<Fet
             for (const item of pendingUA) {
                 const aId = linkToArticleId.get(item.articleLink);
                 if (aId == null) continue;
+
                 if (!userArticleSet.has(aId)) {
                     uaToInsert.push({ userId: user.id, articleId: aId });
                     userArticleSet.add(aId);
@@ -283,13 +284,17 @@ export async function fetchAndFilterArticles(targetUserId?: number): Promise<Fet
             }
 
             if (uaToInsert.length > 0) {
-                await tx.insert(userArticle).values(uaToInsert);
+                tx
+                    .insert(userArticle)
+                    .values(uaToInsert)
+                    .run();
             }
 
-            const userUaRows = await tx
+            const userUaRows = tx
                 .select()
                 .from(userArticle)
-                .where(eq(userArticle.userId, user.id));
+                .where(eq(userArticle.userId, user.id))
+                .all();
 
             const articleIdToUserArticleId = new Map<number, number>();
             for (const ua of userUaRows) {
@@ -298,44 +303,47 @@ export async function fetchAndFilterArticles(targetUserId?: number): Promise<Fet
 
             const uaIds = userUaRows.map((ua) => ua.id);
             let existingKwRels: { userArticleId: number; keywordId: number }[] = [];
+
             if (uaIds.length > 0) {
-                existingKwRels = await tx
+                existingKwRels = tx
                     .select({
                         userArticleId: userArticleKeyword.userArticleId,
                         keywordId: userArticleKeyword.keywordId,
                     })
                     .from(userArticleKeyword)
-                    .where(inArray(userArticleKeyword.userArticleId, uaIds));
+                    .where(inArray(userArticleKeyword.userArticleId, uaIds))
+                    .all();
             }
+
             const existingRelSet = new Set<string>();
             for (const r of existingKwRels) {
                 existingRelSet.add(`${r.userArticleId}:${r.keywordId}`);
             }
 
-            const kwNameToId = new Map(activeKws.map((k) => [k.name, k.id]));
             const relsToInsert: { userArticleId: number; keywordId: number }[] = [];
 
-            for (const [link, kwNamesSet] of linkToMatchedKwNames) {
+            for (const [link, keywordIds] of linkToMatchedKeywordIds) {
                 const aId = linkToArticleId.get(link);
                 if (aId == null) continue;
+
                 const uaId = articleIdToUserArticleId.get(aId);
                 if (uaId == null) continue;
 
-                for (const kwName of kwNamesSet) {
-                    const kwId = kwNameToId.get(kwName);
-                    if (kwId == null) continue;
-                    const key = `${uaId}:${kwId}`;
+                for (const keywordId of keywordIds) {
+                    const key = `${uaId}:${keywordId}`;
+
                     if (!existingRelSet.has(key)) {
-                        relsToInsert.push({ userArticleId: uaId, keywordId: kwId });
+                        relsToInsert.push({ userArticleId: uaId, keywordId });
                         existingRelSet.add(key);
                     }
                 }
             }
 
             if (relsToInsert.length > 0) {
-                await tx
+                tx
                     .insert(userArticleKeyword)
-                    .values(relsToInsert);
+                    .values(relsToInsert)
+                    .run();
             }
         });
 
