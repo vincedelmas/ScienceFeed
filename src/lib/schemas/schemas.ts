@@ -33,7 +33,7 @@ export const createRssFeedSchema = z.object({
 
 export const userArticlesSearchSchema = z.object({
     search: z.string().optional().catch(""),
-    page: z.number().positive().optional().catch(1),
+    page: z.number().int().positive().optional().catch(1),
     keywordsIds: z.array(z.number().positive()).optional().catch([]),
 })
 

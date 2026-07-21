@@ -128,10 +128,14 @@ function KeywordManagerPage() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                     <div className="w-full sm:w-100 sm:max-w-full">
                         <div className="relative">
-                            <Tags className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-foreground-subtle"/>
+                            <Tags
+                                aria-hidden="true"
+                                className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-foreground-subtle"
+                            />
                             <Input
-                                value={newKeyword}
                                 className="pl-9"
+                                value={newKeyword}
+                                aria-label="New keyword"
                                 placeholder="Add a keyword..."
                                 onChange={(ev) => {
                                     setNewKeyword(ev.target.value);
@@ -158,19 +162,30 @@ function KeywordManagerPage() {
                         disabled={addKeywordMutation.isPending || trimmedKeyword.length === 0}
                         className="w-full border border-primary/30 bg-primary/15 hover:bg-primary/25 sm:w-auto"
                     >
-                        {addKeywordMutation.isPending ?
-                            <Loader2 className="size-4 animate-spin"/>
-                            :
-                            <Plus className="size-4"/>
+                        {addKeywordMutation.isPending
+                            ? <Loader2 className="size-4 animate-spin"/>
+                            : <Plus className="size-4"/>
                         }
                         Add Keyword
                     </Button>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3 text-xs text-foreground-muted">
-                    <StatPill label="Total" value={userKeywords.length}/>
-                    <StatPill label="Active" value={activeCount}/>
-                    <StatPill label="Paused" value={inactiveCount}/>
-                    <StatPill label="Linked articles" value={totalLinkedArticles}/>
+                    <StatPill
+                        label="Total"
+                        value={userKeywords.length}
+                    />
+                    <StatPill
+                        label="Active"
+                        value={activeCount}
+                    />
+                    <StatPill
+                        label="Paused"
+                        value={inactiveCount}
+                    />
+                    <StatPill
+                        label="Linked articles"
+                        value={totalLinkedArticles}
+                    />
                 </div>
             </div>
 
@@ -237,6 +252,7 @@ function KeywordManagerPage() {
                                             size="icon"
                                             variant="ghost"
                                             title="Delete keyword"
+                                            aria-label={`Delete keyword: ${keyword.name}`}
                                             disabled={isActionLocked}
                                             onClick={() => handleDeleteKeyword(keyword)}
                                             className="h-8 w-full text-foreground-muted hover:bg-danger-muted hover:text-danger-foreground sm:size-8"

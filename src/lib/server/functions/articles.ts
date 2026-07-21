@@ -72,7 +72,7 @@ export const getUserArticles = createServerFn({ method: "GET" })
                 journal: rssFeed.journal,
                 publisher: rssFeed.publisher,
                 ...getTableColumns(userArticle),
-                keywords: sql<string[]>`group_concat(distinct ${keyword.name})`.mapWith((row: string) => row.split(",")),
+                keywords: sql<string[]>`json_group_array(distinct ${keyword.name})`.mapWith(row => JSON.parse(row) as string[]),
             })
             .from(userArticle)
             .innerJoin(article, eq(userArticle.articleId, article.id))

@@ -16,13 +16,17 @@ export const InputSearch = ({ search, isDisabled, onChange, onResetClick }: Inpu
     return (
         <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
             <div className="relative w-full sm:w-100 sm:max-w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                <Search
+                    aria-hidden="true"
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground"
+                />
                 <Input
                     type="text"
                     value={search}
                     className="pl-9"
                     onChange={onChange}
                     disabled={isDisabled}
+                    aria-label="Search articles"
                     placeholder="Search articles..."
                 />
             </div>

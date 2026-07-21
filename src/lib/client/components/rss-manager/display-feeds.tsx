@@ -78,10 +78,7 @@ export function DisplayFeeds({ userRssFeeds }: { userRssFeeds: UserRssFeed[] }) 
                                                 Last fetch: {feed.lastFetchDate ? formatDateTime(feed.lastFetchDate, { includeTime: true, useLocalTz: true }) : "Not fetched yet"}
                                             </span>
                                             {feed.lastFetchError &&
-                                                <span
-                                                    title={feed.lastFetchError}
-                                                    className="inline-flex min-w-0 items-center gap-1 text-amber-500"
-                                                >
+                                                <span title={feed.lastFetchError} className="inline-flex min-w-0 items-center gap-1 text-amber-500">
                                                     <AlertTriangle className="size-3.5 shrink-0"/>
                                                     <span className="truncate">Fetch failed</span>
                                                 </span>
@@ -94,8 +91,9 @@ export function DisplayFeeds({ userRssFeeds }: { userRssFeeds: UserRssFeed[] }) 
                                     variant="ghost"
                                     title="Remove RSS Feed"
                                     disabled={removingFeedId !== null}
-                                    className="size-9 shrink-0 text-foreground-muted hover:bg-danger-muted hover:text-danger-foreground sm:size-8"
                                     onClick={() => handleRemoveRssFeed(feed)}
+                                    aria-label={`Remove RSS feed: ${feed.journal}`}
+                                    className="size-9 shrink-0 text-foreground-muted hover:bg-danger-muted hover:text-danger-foreground sm:size-8"
                                 >
                                     {removingFeedId === feed.id
                                         ? <span className="size-4 animate-spin rounded-full border-2 border-foreground-muted border-t-transparent"/>

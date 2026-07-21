@@ -37,40 +37,52 @@ export const ArticleCard = (props: ArticleCardProps) => {
         showArchiveAction = true,
     } = props;
 
+    const isSelected = selected.includes(article.id);
     const ArchiveIcon = archiveIcon === "restore" ? RotateCcw : Archive;
+
+    const showActiveDot = !article.isDeleted && !article.isArchived;
     const stateLabel = article.isDeleted ? "Deleted" : article.isArchived ? "Archived" : null;
     const stateDate = article.isDeleted ? article.markedAsDeletedDate : article.markedAsArchivedDate;
-    const showActiveDot = !article.isDeleted && !article.isArchived;
+
     const footerDate = stateLabel && stateDate
         ? `${stateLabel} ${formatDateTime(stateDate, { useLocalTz: true })}`
         : `Added ${formatDateTime(article.addedDate, { useLocalTz: true })}`;
 
-    const onCardClick = () => {
-        if (isEditing) {
-            onSelectionClick(article.id);
-        }
-    };
-
     return (
         <Card
-            onClick={onCardClick}
             className={cn("relative max-sm:w-full gap-0 overflow-hidden rounded-xl border border-border-subtle bg-surface-elevated " +
                 "p-5 pb-4 text-foreground shadow-none transition-colors hover:border-border-strong",
                 isEditing && "cursor-pointer",
-                selected.includes(article.id) && "border-primary/70 bg-surface-selected",
+                isSelected && "border-primary/70 bg-surface-selected",
             )}
         >
             {isEditing &&
-                <div className="absolute left-4 top-4 z-10">
-                    <Checkbox checked={selected.includes(article.id)}/>
-                </div>
+                <>
+                    <button
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => onSelectionClick(article.id)}
+                        aria-label={`${isSelected ? "Deselect" : "Select"} article: ${article.title}`}
+                        className="absolute inset-0 z-10 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+                    />
+                    <div className="pointer-events-none absolute left-4 top-4 z-20">
+                        <Checkbox
+                            tabIndex={-1}
+                            aria-hidden="true"
+                            checked={isSelected}
+                        />
+                    </div>
+                </>
             }
 
             <div className={cn("flex min-w-0 items-start gap-3", isEditing && "pl-7")}>
                 <div className="min-w-0 flex-1">
                     <div className="mb-3 flex min-w-0 items-center gap-2 text-xs">
                         {showActiveDot &&
-                            <span className="size-2 shrink-0 rounded-full bg-primary" aria-hidden="true"/>
+                            <span
+                                aria-hidden="true"
+                                className="size-2 shrink-0 rounded-full bg-primary"
+                            />
                         }
                         <span className="truncate font-semibold text-foreground">
                             {article.journal}
@@ -89,8 +101,8 @@ export const ArticleCard = (props: ArticleCardProps) => {
                             target="_blank"
                             rel="noopener noreferrer"
                             href={isEditing ? undefined : article.link}
-                            className={cn("line-clamp-2", !isEditing && "hover:underline")}
                             onClick={(ev) => ev.stopPropagation()}
+                            className={cn("line-clamp-2", !isEditing && "hover:underline")}
                         >
                             {article.title}
                         </a>
@@ -103,12 +115,13 @@ export const ArticleCard = (props: ArticleCardProps) => {
                     rel="noopener noreferrer"
                     href={isEditing ? undefined : article.link}
                     onClick={(ev) => ev.stopPropagation()}
+                    aria-label={`Open article in a new tab: ${article.title}`}
                     className={cn(
                         "mt-1 shrink-0 rounded-md p-1 text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:mt-11",
                         isEditing && "pointer-events-none opacity-40",
                     )}
                 >
-                    <ExternalLink className="size-4"/>
+                    <ExternalLink className="size-4" aria-hidden="true"/>
                 </a>
             </div>
 
@@ -140,13 +153,14 @@ export const ArticleCard = (props: ArticleCardProps) => {
                                 variant="ghost"
                                 title={archiveTitle}
                                 disabled={isEditing}
+                                aria-label={`${archiveTitle} article: ${article.title}`}
                                 className="size-8 text-foreground-muted hover:bg-surface-hover hover:text-foreground"
                                 onClick={(ev) => {
                                     ev.stopPropagation();
                                     onArchiveClick([article.id]);
                                 }}
                             >
-                                <ArchiveIcon className="size-4"/>
+                                <ArchiveIcon className="size-4" aria-hidden="true"/>
                             </Button>
                         }
                         {showDeleteAction &&
@@ -155,13 +169,14 @@ export const ArticleCard = (props: ArticleCardProps) => {
                                 variant="ghost"
                                 title={deleteTitle}
                                 disabled={isEditing}
+                                aria-label={`${deleteTitle} article: ${article.title}`}
                                 className="size-8 text-foreground-muted hover:bg-surface-hover hover:text-foreground"
                                 onClick={(ev) => {
                                     ev.stopPropagation();
                                     onDeleteClick([article.id]);
                                 }}
                             >
-                                <Trash2 className="size-4"/>
+                                <Trash2 className="size-4" aria-hidden="true"/>
                             </Button>
                         }
                     </div>
