@@ -306,14 +306,6 @@ export async function parseRssFeed(url: string): Promise<RssItem[]> {
         throw new RssFetchError(`Failed to fetch RSS feed ${url}. HTTP ${res.status}`, res.status);
     }
 
-    const parser = new XMLParser({
-        trimValues: true,
-        processEntities: true,
-        ignoreAttributes: true,
-        attributeNamePrefix: "",
-        cdataPropName: "__cdata",
-    });
-
     const xml = res.body;
     if (/<title>\s*Just a moment\.\.\.\s*<\/title>/i.test(xml)) {
         throw new RssFetchError(`Failed to fetch RSS feed ${url}. Cloudflare challenge`, res.status, true);
@@ -323,9 +315,25 @@ export async function parseRssFeed(url: string): Promise<RssItem[]> {
         throw new RssFetchError(`Failed to fetch RSS feed ${url}. Response is not XML`, res.status);
     }
 
+    return parseRssXml(xml);
+}
+
+
+export function parseRssXml(xml: string): RssItem[] {
+    const parser = new XMLParser({
+        trimValues: true,
+        processEntities: true,
+        ignoreAttributes: false,
+        attributeNamePrefix: "",
+        cdataPropName: "__cdata",
+    });
+
     const doc = parser.parse(xml);
 
-    let items: unknown = doc?.rss?.channel?.item ?? doc?.rdf?.item ?? doc?.channel?.item;
+    let items: unknown = doc?.rss?.channel?.item
+        ?? doc?.rdf?.item
+        ?? doc?.channel?.item;
+
     if (!items && doc?.feed?.entry) items = doc.feed.entry;
     if (!items) return [];
 
@@ -341,42 +349,28 @@ export async function parseRssFeed(url: string): Promise<RssItem[]> {
 
             const maybeText = (v as any)["#text"];
             if (typeof maybeText === "string") return maybeText;
+
+            return null;
         }
 
         return String(v);
     };
 
     const extractLink = (item: any): string | null => {
-        if (item.link != null) {
-            const linkVal = item.link;
-            if (typeof linkVal === "string") return linkVal;
+        const links = Array.isArray(item.link) ? item.link : [item.link];
 
-            if (Array.isArray(linkVal)) {
-                const first = linkVal[0];
-                if (typeof first === "string") return first;
-                if (first && typeof first.href === "string") return first.href;
-            }
-            else if (linkVal && typeof linkVal.href === "string") {
-                return linkVal.href;
-            }
+        const alternate = links.find((link: any) => link?.rel === "alternate" && typeof link.href === "string");
+        if (alternate) return alternate.href;
 
-            const asText = toStringOrNull(linkVal);
-            if (asText) return asText;
+        for (const link of links) {
+            const text = toStringOrNull(link);
+            if (text) return text;
         }
 
-        if (item.link == null && item.href) return String(item.href);
+        const withHref = links.find((link: any) => typeof link?.href === "string");
+        if (withHref) return withHref.href;
 
-        const links = item.link;
-        if (Array.isArray(links)) {
-            const alt = links.find((l: any) => typeof l === "object" && l.rel === "alternate" && l.href);
-            if (alt?.href) return String(alt.href);
-
-            const firstHref = links.find((l: any) => typeof l === "object" && l.href);
-            if (firstHref?.href) return String(firstHref.href);
-
-            const firstString = links.find((l: any) => typeof l === "string");
-            if (firstString) return String(firstString);
-        }
+        if (typeof item.href === "string") return item.href;
 
         return null;
     };

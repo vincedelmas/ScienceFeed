@@ -1,8 +1,7 @@
 # ScienceFeed
 
-ScienceFeed is a small personal RSS reader for science articles.
-It lets users sign in with Google, add RSS feeds, define keywords, and keep a simple list of matching articles.
-It is built with Bun, TanStack Start, React, Drizzle, SQLite, Better Auth, and Tailwind CSS.
+ScienceFeed is a small personal RSS reader for science articles. It lets users sign in with Google, add RSS feeds, define keywords, and keep a simple list of matching articles. It
+is built with Bun, TanStack Start, React, Drizzle, SQLite, Better Auth, and Tailwind CSS.
 
 ## What it does
 
@@ -44,6 +43,12 @@ Run database migrations:
 bun run dk migrate
 ```
 
+Seed the bundled RSS feed catalog:
+
+```bash
+bun run seed
+```
+
 Start the dev server:
 
 ```bash
@@ -56,20 +61,22 @@ The app runs at `http://localhost:3000` by default.
 
 ```bash
 bun run lint      # run oxlint
+bun run test      # run tests
 bun run dev       # start the app locally
 bun run build     # build the app and CLI
 bun run knip      # check for unused files/dependencies
+bun run seed      # seed or update the bundled RSS feed catalog
 ```
 
 CLI tasks:
 
 ```bash
+bun run cli seed-rss-feeds
 bun run cli fetch-rss-feeds
 bun run cli cleanup-deleted-articles
 ```
 
 ## Notes
 
-RSS fetching is handled through the CLI, so run it manually or schedule it with cron/systemd if you want regular updates.
-Deleted articles are soft-deleted first; the cleanup command removes old deleted entries and orphaned articles.
-Custom feeds must use a public HTTP or HTTPS URL. Redirect targets are checked with the same rules.
+RSS fetching is handled through the CLI, so run it manually or schedule it with cron/systemd if you want regular updates. Deleted articles are soft-deleted first; the cleanup
+command removes old deleted entries and orphaned articles. Custom feeds must use a public HTTP or HTTPS URL. Redirect targets are checked with the same rules.

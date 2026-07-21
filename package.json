@@ -13,6 +13,7 @@
         "ui": "bunx shadcn@latest",
         "cli": "bun --bun src/cli/cli.ts",
         "dev": "bun --bun vite dev --port 3000",
+        "seed": "bun --bun src/cli/cli.ts seed-rss-feeds",
         "build": "bun --bun vite build && bun run build:cli",
         "migrate:auth": "bun --bun scripts/migrate-script.ts",
         "build:cli": "bun build src/cli/cli.ts --target bun --outfile dist/cli.js",

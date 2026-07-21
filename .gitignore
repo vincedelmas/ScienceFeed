@@ -21,13 +21,13 @@ dist
 
 .idea
 **/site.db
-/instance/**
+/instance/*
+!/instance/.gitkeep
 
-**/public/static
-!**/public/static/seed-rss-feeds.json
+/public/static/*
+!/public/static/seed-rss-feeds.json
 
 .tanstack
 /tsconfig.tsbuildinfo
 **/routeTree.gen.ts
-bun.lock
 how-errors-works.md

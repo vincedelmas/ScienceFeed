@@ -8,9 +8,8 @@ export const Route = createFileRoute("/_public")({
         const currentUser = queryClient.getQueryData(authOptions.queryKey);
 
         if (search.authExpired) {
-            await queryClient.invalidateQueries({ queryKey: authOptions.queryKey });
             queryClient.clear();
-            throw redirect({ to: "/", replace: true });
+            throw redirect({ to: "/", search: { authExpired: undefined }, replace: true });
         }
 
         if (currentUser) {

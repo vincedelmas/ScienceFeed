@@ -9,7 +9,7 @@ export const authMiddleware = createMiddleware({ type: "function" }).server(asyn
     const session = await auth.api.getSession({ headers });
 
     if (!session) {
-        throw redirect({ to: "/", replace: true, statusCode: 401 });
+        throw redirect({ to: "/", search: { authExpired: true }, replace: true, statusCode: 401 });
     }
 
     return next({

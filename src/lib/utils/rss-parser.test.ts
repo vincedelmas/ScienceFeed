@@ -4,10 +4,49 @@ import {
     findMatchingKeywordIds,
     isPublicIpAddress,
     parseAllowedFeedUrl,
+    parseRssXml,
     requestPinnedUrl,
     resolvePublicAddress,
     RssFetchError,
 } from "./rss-parser";
+
+
+describe("RSS and Atom parsing", () => {
+    test("extracts the alternate article link from an Atom entry", () => {
+        const xml = `
+            <feed xmlns="http://www.w3.org/2005/Atom">
+                <entry>
+                    <title>Atom article</title>
+                    <link rel="self" href="https://example.com/atom/1"/>
+                    <link rel="alternate" href="https://example.com/articles/1"/>
+                    <summary>Article summary</summary>
+                </entry>
+            </feed>
+        `;
+
+        expect(parseRssXml(xml)).toEqual([{
+            title: "Atom article",
+            link: "https://example.com/articles/1",
+            description: "Article summary",
+        }]);
+    });
+
+    test("continues to extract text links from RSS items", () => {
+        const xml = `
+            <rss version="2.0">
+                <channel>
+                    <item>
+                        <title>RSS article</title>
+                        <link>https://example.com/articles/2</link>
+                        <description>Article summary</description>
+                    </item>
+                </channel>
+            </rss>
+        `;
+
+        expect(parseRssXml(xml)[0]?.link).toBe("https://example.com/articles/2");
+    });
+});
 
 
 describe("keyword matching", () => {

@@ -1,6 +1,7 @@
 #!/usr/bin/env bun
 import {Command} from "commander";
 import {fetchAndFilterArticles} from "@/lib/utils/fetch-articles";
+import {seedDatabaseWithRssFeeds} from "@/lib/utils/seed-database";
 import {cleanupDeletedArticles} from "@/lib/server/functions/cleanup";
 
 
@@ -28,6 +29,15 @@ program
 
         console.log(`Deleted ${result.deletedUserArticles} soft-deleted user article(s) older than ${result.retentionDays} days.`);
         console.log(`Deleted ${result.deletedOrphanArticles} orphan article(s) with no user article references.`);
+    });
+
+
+program
+    .command("seed-rss-feeds")
+    .description("Seed or update the bundled RSS feed catalog")
+    .action(async () => {
+        const seededFeeds = await seedDatabaseWithRssFeeds();
+        console.log(`Seeded or updated ${seededFeeds} RSS feed(s).`);
     });
 
 

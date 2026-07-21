@@ -5,7 +5,7 @@ import {createEnv} from "@t3-oss/env-core";
 export const serverEnv = createEnv({
     server: {
         // Database
-        DATABASE_URL: z.string().default("./instance/site.db"),
+        DATABASE_URL: z.string().trim().min(1).default("./instance/site.db"),
 
         // Better-Auth
         BETTER_AUTH_SECRET: z.string().min(20),

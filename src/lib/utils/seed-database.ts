@@ -1,33 +1,33 @@
 import {join} from "path";
-import {eq} from "drizzle-orm";
+import {sql} from "drizzle-orm";
 import {readFile} from "fs/promises";
 import {db} from "@/lib/server/database/db";
-import {createServerOnlyFn} from "@tanstack/react-start";
 import {rssFeed as rssFeedTable} from "@/lib/server/database/schema";
 
 
-export const seedDatabaseWithRssFeeds = createServerOnlyFn(() => async () => {
-    const labelsFilePath = join(process.cwd(), "public", "static", "seed-rss-feeds.json");
-    const rssFeedsAsString = await readFile(labelsFilePath, "utf-8");
-    const rssFeedsToSeed: { data: { publisher: string, url: string, journal: string }[] } = JSON.parse(rssFeedsAsString);
+type RSSToSeed = {
+    url: string,
+    journal: string,
+    publisher: string,
+}[];
 
-    for (const rssFeed of rssFeedsToSeed.data) {
-        const existingRssFeed = db
-            .select()
-            .from(rssFeedTable)
-            .where(eq(rssFeedTable.url, rssFeed.url))
-            .get();
 
-        if (existingRssFeed) {
-            await db
-                .update(rssFeedTable)
-                .set({ ...rssFeed })
-                .where(eq(rssFeedTable.url, rssFeed.url));
-        }
-        else {
-            await db
-                .insert(rssFeedTable)
-                .values({ ...rssFeed });
-        }
+export const seedDatabaseWithRssFeeds = async () => {
+    const rssFeedsAsString = await readFile(join(process.cwd(), "public", "static", "seed-rss-feeds.json"), "utf-8");
+
+    const rssFeedsToSeed: { data: RSSToSeed } = JSON.parse(rssFeedsAsString);
+    if (rssFeedsToSeed.data.length > 0) {
+        db
+            .insert(rssFeedTable)
+            .values(rssFeedsToSeed.data)
+            .onConflictDoUpdate({
+                target: rssFeedTable.url,
+                set: {
+                    journal: sql`excluded.journal`,
+                    publisher: sql`excluded.publisher`,
+                },
+            }).run();
     }
-})();
+
+    return rssFeedsToSeed.data.length;
+};
