@@ -25,9 +25,9 @@ export const generalSettingsSchema = z.object({
 
 
 export const createRssFeedSchema = z.object({
-    url: z.url().trim(),
     journal: z.string().trim().min(1),
     publisher: z.string().trim().min(1),
+    url: z.string().trim().pipe(z.url({ protocol: /^https?$/ })),
 });
 
 

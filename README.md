@@ -72,3 +72,4 @@ bun run cli cleanup-deleted-articles
 
 RSS fetching is handled through the CLI, so run it manually or schedule it with cron/systemd if you want regular updates.
 Deleted articles are soft-deleted first; the cleanup command removes old deleted entries and orphaned articles.
+Custom feeds must use a public HTTP or HTTPS URL. Redirect targets are checked with the same rules.

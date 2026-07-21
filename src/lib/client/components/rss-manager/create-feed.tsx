@@ -59,7 +59,7 @@ export function CreateNewRSSFeed() {
                 <DialogHeader>
                     <DialogTitle>Add RSS Feed</DialogTitle>
                     <DialogDescription>Add a new RSS feed to your account.</DialogDescription>
-                </DialogHeader>A
+                </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                         <FormField

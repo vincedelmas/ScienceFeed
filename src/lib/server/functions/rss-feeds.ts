@@ -1,8 +1,8 @@
 import {db} from "@/lib/server/database/db";
 import {createServerFn} from "@tanstack/react-start";
-import {and, eq, inArray, like, or, sql} from "drizzle-orm";
 import {fetchAndFilterArticles} from "@/lib/utils/fetch-articles";
 import {authMiddleware} from "@/lib/server/middlewares/authentication";
+import {and, eq, inArray, isNull, like, lte, or, sql} from "drizzle-orm";
 import {keyword, rssFeed, user, userRssFeed} from "@/lib/server/database/schema";
 import {createRssFeedSchema, feedsIdsSchema, querySearchSchema, rssIdsSchema} from "@/lib/schemas/schemas";
 
@@ -123,22 +123,11 @@ export const removeRssFeedsFromUser = createServerFn({ method: "POST" })
     })
 
 
-export const fetchUserRssFeeds = createServerFn({ method: "GET" })
+export const fetchUserRssFeeds = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const now = new Date();
         const DELTA_MINUTES = 30;
-
-        if (currentUser.lastRssUpdate) {
-            const lastUpdate = new Date(currentUser.lastRssUpdate)
-            const nextAllowedUpdate = new Date(lastUpdate.getTime() + (DELTA_MINUTES * 60 * 1000))
-
-            if (now < nextAllowedUpdate) {
-                const diffInMilliseconds = nextAllowedUpdate.getTime() - now.getTime()
-                const diffInMinutes = Math.floor(diffInMilliseconds / (1000 * 60))
-                return { warn: `RSS Fetcher will be available in ${diffInMinutes} minutes` }
-            }
-        }
 
         const activeKeywords = await db
             .select({ name: keyword.name })
@@ -149,14 +138,37 @@ export const fetchUserRssFeeds = createServerFn({ method: "GET" })
             return { warn: "At least one active keyword is required to fetch articles" }
         }
 
-        const result = await fetchAndFilterArticles(currentUser.id)
+        const acquiredCooldown = await db
+            .update(user)
+            .set({ lastRssUpdate: sql`(CURRENT_TIMESTAMP)` })
+            .where(and(
+                eq(user.id, currentUser.id),
+                or(isNull(user.lastRssUpdate), lte(user.lastRssUpdate, sql`datetime('now', ${`-${DELTA_MINUTES} minutes`})`)),
+            ))
+            .returning({ lastRssUpdate: user.lastRssUpdate });
 
-        if (result.processedFeeds > 0) {
-            await db
-                .update(user)
-                .set({ lastRssUpdate: sql`(CURRENT_TIMESTAMP)` })
+        if (acquiredCooldown.length === 0) {
+            const storedUser = db
+                .select({ lastRssUpdate: user.lastRssUpdate })
+                .from(user)
                 .where(eq(user.id, currentUser.id))
+                .get();
+
+            const rawLastUpdate = storedUser?.lastRssUpdate;
+            const normedLastUpdate = rawLastUpdate && /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(rawLastUpdate)
+                ? `${rawLastUpdate.replace(" ", "T")}Z`
+                : rawLastUpdate;
+
+            const lastUpdate = normedLastUpdate ? new Date(normedLastUpdate) : now;
+            const nextAllowedUpdate = new Date(lastUpdate.getTime() + (DELTA_MINUTES * 60 * 1000));
+
+            const diffInMs = Math.max(0, nextAllowedUpdate.getTime() - now.getTime());
+            const diffInMin = Math.max(1, Math.ceil(diffInMs / (1000 * 60)));
+
+            return { warn: `RSS Fetcher will be available in ${diffInMin} minutes` };
         }
+
+        const result = await fetchAndFilterArticles(currentUser.id)
 
         if (result.failedFeeds.length > 0) {
             const failedLabels = result.failedFeeds
@@ -165,8 +177,8 @@ export const fetchUserRssFeeds = createServerFn({ method: "GET" })
                 .join(", ");
 
             return {
-                warn: `${result.failedFeeds.length} feed(s) could not be fetched: ${failedLabels}`,
                 failedFeeds: result.failedFeeds,
+                warn: `${result.failedFeeds.length} feed(s) could not be fetched: ${failedLabels}`,
             }
         }
     })
