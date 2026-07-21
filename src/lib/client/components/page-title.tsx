@@ -25,7 +25,7 @@ export const PageTitle = ({ children, title, subtitle, onlyHelmet = false }: Pag
                     <MutedText className="text-muted-foreground not-italic">
                         {subtitle}
                     </MutedText>
-                    <Separator/>
+                    <Separator className="mt-1"/>
                     {children}
                 </div>
             }

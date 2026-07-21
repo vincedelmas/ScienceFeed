@@ -15,6 +15,13 @@
       "when": 1781618400000,
       "tag": "0001_rss_feed_fetch_status",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784622061761,
+      "tag": "0002_fix_keyword_delete_cascade",
+      "breakpoints": true
     }
   ]
 }

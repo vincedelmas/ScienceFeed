@@ -152,9 +152,9 @@ function KeywordManagerPage() {
                 </div>
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-lg border border-border-subtle bg-surface">
+            <div className="mt-6 overflow-hidden rounded-lg border border-dashed">
                 {sortedKeywords.length === 0 ?
-                    <div className="py-10 text-center text-sm text-foreground-muted">
+                    <div className="py-10 text-center text-sm text-muted-foreground">
                         No keywords added yet.
                     </div>
                     :

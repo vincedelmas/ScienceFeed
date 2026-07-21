@@ -9,33 +9,28 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from "./routes/__root";
-import { Route as PublicRouteImport } from "./routes/_public";
 import { Route as PrivateRouteImport } from "./routes/_private";
-import { Route as PublicIndexRouteImport } from "./routes/_public/index";
-import { Route as PrivateSettingsRouteImport } from "./routes/_private/settings";
-import { Route as PrivateRssManagerRouteImport } from "./routes/_private/rss-manager";
+import { Route as PublicRouteImport } from "./routes/_public";
 import { Route as PrivateKeywordsRouteImport } from "./routes/_private/keywords";
-import { Route as ApiAuthSplatRouteImport } from "./routes/api/auth/$";
-import { Route as PrivateDashboardTrashBinRouteImport } from "./routes/_private/dashboard/trash-bin";
-import { Route as PrivateDashboardArticlesRouteImport } from "./routes/_private/dashboard/articles";
+import { Route as PrivateRssManagerRouteImport } from "./routes/_private/rss-manager";
+import { Route as PrivateSettingsRouteImport } from "./routes/_private/settings";
+import { Route as PublicIndexRouteImport } from "./routes/_public/index";
 import { Route as PrivateDashboardArchivedRouteImport } from "./routes/_private/dashboard/archived";
+import { Route as PrivateDashboardArticlesRouteImport } from "./routes/_private/dashboard/articles";
+import { Route as PrivateDashboardTrashBinRouteImport } from "./routes/_private/dashboard/trash-bin";
+import { Route as ApiAuthSplatRouteImport } from "./routes/api/auth/$";
 
-const PublicRoute = PublicRouteImport.update({
-  id: "/_public",
-  getParentRoute: () => rootRouteImport,
-} as any);
 const PrivateRoute = PrivateRouteImport.update({
   id: "/_private",
   getParentRoute: () => rootRouteImport,
 } as any);
-const PublicIndexRoute = PublicIndexRouteImport.update({
-  id: "/",
-  path: "/",
-  getParentRoute: () => PublicRoute,
+const PublicRoute = PublicRouteImport.update({
+  id: "/_public",
+  getParentRoute: () => rootRouteImport,
 } as any);
-const PrivateSettingsRoute = PrivateSettingsRouteImport.update({
-  id: "/settings",
-  path: "/settings",
+const PrivateKeywordsRoute = PrivateKeywordsRouteImport.update({
+  id: "/keywords",
+  path: "/keywords",
   getParentRoute: () => PrivateRoute,
 } as any);
 const PrivateRssManagerRoute = PrivateRssManagerRouteImport.update({
@@ -43,20 +38,20 @@ const PrivateRssManagerRoute = PrivateRssManagerRouteImport.update({
   path: "/rss-manager",
   getParentRoute: () => PrivateRoute,
 } as any);
-const PrivateKeywordsRoute = PrivateKeywordsRouteImport.update({
-  id: "/keywords",
-  path: "/keywords",
+const PrivateSettingsRoute = PrivateSettingsRouteImport.update({
+  id: "/settings",
+  path: "/settings",
   getParentRoute: () => PrivateRoute,
 } as any);
-const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
-  id: "/api/auth/$",
-  path: "/api/auth/$",
-  getParentRoute: () => rootRouteImport,
+const PublicIndexRoute = PublicIndexRouteImport.update({
+  id: "/",
+  path: "/",
+  getParentRoute: () => PublicRoute,
 } as any);
-const PrivateDashboardTrashBinRoute =
-  PrivateDashboardTrashBinRouteImport.update({
-    id: "/dashboard/trash-bin",
-    path: "/dashboard/trash-bin",
+const PrivateDashboardArchivedRoute =
+  PrivateDashboardArchivedRouteImport.update({
+    id: "/dashboard/archived",
+    path: "/dashboard/archived",
     getParentRoute: () => PrivateRoute,
   } as any);
 const PrivateDashboardArticlesRoute =
@@ -65,12 +60,17 @@ const PrivateDashboardArticlesRoute =
     path: "/dashboard/articles",
     getParentRoute: () => PrivateRoute,
   } as any);
-const PrivateDashboardArchivedRoute =
-  PrivateDashboardArchivedRouteImport.update({
-    id: "/dashboard/archived",
-    path: "/dashboard/archived",
+const PrivateDashboardTrashBinRoute =
+  PrivateDashboardTrashBinRouteImport.update({
+    id: "/dashboard/trash-bin",
+    path: "/dashboard/trash-bin",
     getParentRoute: () => PrivateRoute,
   } as any);
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: "/api/auth/$",
+  path: "/api/auth/$",
+  getParentRoute: () => rootRouteImport,
+} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof PublicIndexRoute;
@@ -148,13 +148,6 @@ export interface RootRouteChildren {
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    "/_public": {
-      id: "/_public";
-      path: "";
-      fullPath: "/";
-      preLoaderRoute: typeof PublicRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
     "/_private": {
       id: "/_private";
       path: "";
@@ -162,18 +155,18 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof PrivateRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/_public/": {
-      id: "/_public/";
-      path: "/";
+    "/_public": {
+      id: "/_public";
+      path: "";
       fullPath: "/";
-      preLoaderRoute: typeof PublicIndexRouteImport;
-      parentRoute: typeof PublicRoute;
+      preLoaderRoute: typeof PublicRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
-    "/_private/settings": {
-      id: "/_private/settings";
-      path: "/settings";
-      fullPath: "/settings";
-      preLoaderRoute: typeof PrivateSettingsRouteImport;
+    "/_private/keywords": {
+      id: "/_private/keywords";
+      path: "/keywords";
+      fullPath: "/keywords";
+      preLoaderRoute: typeof PrivateKeywordsRouteImport;
       parentRoute: typeof PrivateRoute;
     };
     "/_private/rss-manager": {
@@ -183,25 +176,25 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof PrivateRssManagerRouteImport;
       parentRoute: typeof PrivateRoute;
     };
-    "/_private/keywords": {
-      id: "/_private/keywords";
-      path: "/keywords";
-      fullPath: "/keywords";
-      preLoaderRoute: typeof PrivateKeywordsRouteImport;
+    "/_private/settings": {
+      id: "/_private/settings";
+      path: "/settings";
+      fullPath: "/settings";
+      preLoaderRoute: typeof PrivateSettingsRouteImport;
       parentRoute: typeof PrivateRoute;
     };
-    "/api/auth/$": {
-      id: "/api/auth/$";
-      path: "/api/auth/$";
-      fullPath: "/api/auth/$";
-      preLoaderRoute: typeof ApiAuthSplatRouteImport;
-      parentRoute: typeof rootRouteImport;
+    "/_public/": {
+      id: "/_public/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof PublicIndexRouteImport;
+      parentRoute: typeof PublicRoute;
     };
-    "/_private/dashboard/trash-bin": {
-      id: "/_private/dashboard/trash-bin";
-      path: "/dashboard/trash-bin";
-      fullPath: "/dashboard/trash-bin";
-      preLoaderRoute: typeof PrivateDashboardTrashBinRouteImport;
+    "/_private/dashboard/archived": {
+      id: "/_private/dashboard/archived";
+      path: "/dashboard/archived";
+      fullPath: "/dashboard/archived";
+      preLoaderRoute: typeof PrivateDashboardArchivedRouteImport;
       parentRoute: typeof PrivateRoute;
     };
     "/_private/dashboard/articles": {
@@ -211,12 +204,19 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof PrivateDashboardArticlesRouteImport;
       parentRoute: typeof PrivateRoute;
     };
-    "/_private/dashboard/archived": {
-      id: "/_private/dashboard/archived";
-      path: "/dashboard/archived";
-      fullPath: "/dashboard/archived";
-      preLoaderRoute: typeof PrivateDashboardArchivedRouteImport;
+    "/_private/dashboard/trash-bin": {
+      id: "/_private/dashboard/trash-bin";
+      path: "/dashboard/trash-bin";
+      fullPath: "/dashboard/trash-bin";
+      preLoaderRoute: typeof PrivateDashboardTrashBinRouteImport;
       parentRoute: typeof PrivateRoute;
+    };
+    "/api/auth/$": {
+      id: "/api/auth/$";
+      path: "/api/auth/$";
+      fullPath: "/api/auth/$";
+      preLoaderRoute: typeof ApiAuthSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
   }
 }
