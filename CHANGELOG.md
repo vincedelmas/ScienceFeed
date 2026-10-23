@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/vincedelmas/ScienceFeed/compare/v1.0.0...v1.1.0) (2026-10-23)
+
+
+### Features
+
+* add Docker deployment support ([34c37ab](https://github.com/vincedelmas/ScienceFeed/commit/34c37ab740575d6db707967473b6f0db7f9c5272))
+
 ## 1.0.0 (2026-10-23)
 
 
