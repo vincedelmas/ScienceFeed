@@ -1,7 +1,7 @@
-import {toast} from "sonner";
 import {useState} from "react";
 import {cn} from "@/lib/utils/utils";
 import {UserKeyword} from "@/lib/types/types";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
@@ -10,17 +10,7 @@ import {PageTitle} from "@/lib/client/components/page-title";
 import {userKeywordsOptions} from "@/lib/client/react-query";
 import {Loader2, PauseCircle, PlayCircle, Plus, Tags, Trash2} from "lucide-react";
 import {useAddKeywordMutation, useDeleteKeywordMutation, useToggleKeywordMutation} from "@/lib/client/react-query/mutations";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogMedia,
-    AlertDialogTitle,
-} from "@/lib/client/components/ui/alert-dialog";
+import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle} from "@/lib/client/components/ui/alert-dialog";
 
 
 export const Route = createFileRoute("/_private/keywords")({
@@ -70,7 +60,7 @@ function KeywordManagerPage() {
         addKeywordMutation.mutate({ data: { name: trimmedKeyword } }, {
             onError: (error) => {
                 setErrorMessage(error?.message ?? "Failed to add new keyword");
-                toast.error("Failed to add new keyword");
+                toast.add({ type: "error", title: "Failed to add new keyword" });
             },
             onSuccess: () => {
                 setNewKeyword("");
@@ -101,7 +91,7 @@ function KeywordManagerPage() {
             toggleKeywordMutation.mutate({ data: { keywordId: keyword.id, active: !keyword.active } }, {
                 onError: () => {
                     setPendingToggleKeywordId(null);
-                    toast.error("Failed to toggle the keyword");
+                    toast.add({ type: "error", title: "Failed to toggle the keyword" });
                 },
                 onSuccess: () => {
                     setPendingToggleKeywordId(null);
@@ -114,7 +104,7 @@ function KeywordManagerPage() {
         deleteKeywordMutation.mutate({ data: { keywordId: keyword.id } }, {
             onError: () => {
                 setPendingDeleteKeywordId(null);
-                toast.error("Failed to delete keyword");
+                toast.add({ type: "error", title: "Failed to delete keyword" });
             },
             onSuccess: () => {
                 setPendingDeleteKeywordId(null);
@@ -305,7 +295,7 @@ function KeywordActionDialog({ action, onCancel, onConfirm }: KeywordActionDialo
         ? <>Delete '<b>{keyword.name}</b>' keyword?</>
         : isPausing
             ? <>Pause '<b>{keyword.name}</b>' keyword?</>
-            : <>Activate '<b>{keyword.name}</b>' keyword?</>
+            : <>Activate '<b>{keyword.name}</b>' keyword?</>;
 
     const description = isDelete
         ? `This removes the keyword from ${formatCount(keyword.totalArticles)} linked article(s). This action cannot be undone.`
@@ -358,7 +348,7 @@ function KeywordActionDialog({ action, onCancel, onConfirm }: KeywordActionDialo
 }
 
 
-function StatPill({ label, value }: { label: string; value: number }) {
+function StatPill({ label, value }: { label: string; value: number; }) {
     return (
         <span className="rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1">
             {label}: {value}

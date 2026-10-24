@@ -1,7 +1,7 @@
-import {toast} from "sonner";
 import React, {useRef, useState} from "react";
 import {useQuery} from "@tanstack/react-query";
 import {SearchRssFeed} from "@/lib/types/types";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
 import {rssSearchOptions} from "@/lib/client/react-query";
 import {useDebounce} from "@/lib/client/hooks/use-debounce";
@@ -26,11 +26,11 @@ export function SearchRSSFeeds() {
         addRssFeedsMutation.mutate({ data: { feedsIds: [rssFeed.id] } }, {
             onError: () => {
                 setPendingFeedId(null);
-                toast.error("Failed to add this RSS Feed");
+                toast.add({ type: "error", title: "Failed to add this RSS Feed" });
             },
             onSuccess: () => {
                 setPendingFeedId(null);
-                toast.success("RSS Feed successfully added");
+                toast.add({ type: "success", title: "RSS Feed successfully added" });
             },
         });
     };

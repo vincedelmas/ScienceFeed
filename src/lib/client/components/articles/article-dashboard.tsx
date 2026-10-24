@@ -1,7 +1,7 @@
-import {toast} from "sonner";
 import {cn} from "@/lib/utils/utils";
 import {useEffect, useState} from "react";
 import {ArticleBulkActions} from "@/lib/types/types";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {PageTitle} from "@/lib/client/components/page-title";
 import {Pagination} from "@/lib/client/components/pagination";
@@ -119,7 +119,7 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
         setSelectedArticles([]);
         archiveArticlesMutation.mutate({ data: { articleIds, archive } }, {
             onError: () => {
-                return toast.error(`Failed to ${archive ? "archive" : "unarchive"} the article(s)`);
+                return toast.add({ type: "error", title: `Failed to ${archive ? "archive" : "unarchive"} the article(s)` });
             },
         });
     };
@@ -128,7 +128,7 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
         setSelectedArticles([]);
         deleteArticlesMutation.mutate({ data: { articleIds, isDeleted } }, {
             onError: () => {
-                return toast.error(`Failed to ${isDeleted ? "delete" : "restore"} the article(s)`);
+                return toast.add({ type: "error", title: `Failed to ${isDeleted ? "delete" : "restore"} the article(s)` });
             },
         });
     };

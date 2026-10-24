@@ -15,11 +15,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild>
-                            <Link to="/dashboard/articles" onClick={() => setOpenMobile(false)}>
-                                <FlaskConical className="mt-0.5 mr-1"/>
-                                <span className="shrink-0 text-xl">Science-Feed</span>
-                            </Link>
+                        <SidebarMenuButton render={<Link to="/dashboard/articles" onClick={() => setOpenMobile(false)}/>}>
+                            <FlaskConical className="mt-0.5 mr-1"/>
+                            <span className="shrink-0 text-xl">Science-Feed</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

@@ -29,16 +29,14 @@ export function NavDashboard() {
         <SidebarGroup>
             <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
             <SidebarMenu>
-                {items.map((item) =>
+                {items.map((item) => (
                     <SidebarMenuItem key={item.name}>
-                        <SidebarMenuButton tooltip={item.name} asChild>
-                            <Link to={item.url} onClick={() => setOpenMobile(false)}>
-                                <item.icon/>
-                                <span>{item.name}</span>
-                            </Link>
+                        <SidebarMenuButton tooltip={item.name} render={<Link to={item.url} onClick={() => setOpenMobile(false)}/>}>
+                            <item.icon/>
+                            <span>{item.name}</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                )}
+                ))}
             </SidebarMenu>
         </SidebarGroup>
     );

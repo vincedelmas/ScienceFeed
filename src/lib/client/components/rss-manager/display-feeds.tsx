@@ -1,13 +1,13 @@
-import {toast} from "sonner";
 import React, {useState} from "react";
 import {UserRssFeed} from "@/lib/types/types";
 import {formatDateTime} from "@/lib/utils/utils";
+import {toast} from "@/lib/client/components/ui/toast";
 import {AlertTriangle, Rss, Trash2} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {useRemoveUserRssFeedMutation} from "@/lib/client/react-query/mutations";
 
 
-export function DisplayFeeds({ userRssFeeds }: { userRssFeeds: UserRssFeed[] }) {
+export function DisplayFeeds({ userRssFeeds }: { userRssFeeds: UserRssFeed[]; }) {
     const removeUserRssFeedMutation = useRemoveUserRssFeedMutation();
     const [removingFeedId, setRemovingFeedId] = useState<number | null>(null);
 
@@ -18,11 +18,11 @@ export function DisplayFeeds({ userRssFeeds }: { userRssFeeds: UserRssFeed[] }) 
         removeUserRssFeedMutation.mutate({ data: { rssIds: [rssFeed.id] } }, {
             onError: () => {
                 setRemovingFeedId(null);
-                toast.error("Failed to remove this RSS Feed");
+                toast.add({ type: "error", title: "Failed to remove this RSS Feed" });
             },
             onSuccess: () => {
                 setRemovingFeedId(null);
-                toast.success("RSS Feed successfully removed");
+                toast.add({ type: "success", title: "RSS Feed successfully removed" });
             },
         });
     };

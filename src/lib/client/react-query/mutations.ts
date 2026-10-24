@@ -1,4 +1,4 @@
-import {toast} from "sonner";
+import {toast} from "@/lib/client/components/ui/toast";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {postGeneralSettings} from "@/lib/server/functions/settings";
 import {archiveArticles, deleteArticles} from "@/lib/server/functions/articles";
@@ -141,7 +141,7 @@ export const useRssFetcher = () => {
 
     return useMutation({
         mutationFn: fetchUserRssFeeds,
-        onError: () => toast.error("An error occurred while running the RSS Fetcher"),
+        onError: () => toast.add({ type: "error", title: "An error occurred while running the RSS Fetcher" }),
         onSuccess: async (data) => {
             await Promise.all([
                 invalidateArticleLists(queryClient),
@@ -149,8 +149,11 @@ export const useRssFetcher = () => {
                 queryClient.invalidateQueries({ queryKey: rssManagerOptions.queryKey }),
             ]);
 
-            if (data) return toast.warning(data?.warn);
-            toast.success("RSS Fetcher successfully finished");
+            if (data) {
+                return toast.add({ type: "warning", title: data?.warn });
+            }
+
+            toast.add({ type: "success", title: "RSS Fetcher successfully finished" });
         },
     });
 }

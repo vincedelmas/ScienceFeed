@@ -3,12 +3,13 @@ import React, {lazy} from "react";
 import appCss from "@/styles.css?url";
 import {authOptions} from "@/lib/client/react-query";
 import type {QueryClient} from "@tanstack/react-query";
-import {Toaster} from "@/lib/client/components/ui/sonner";
+import {Toaster} from "@/lib/client/components/ui/toast";
 import {useNProgress} from "@/lib/client/hooks/use-nprogress";
+import {TooltipProvider} from "@/lib/client/components/ui/tooltip";
 import {createRootRouteWithContext, HeadContent, Outlet, Scripts} from "@tanstack/react-router";
 
 
-export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+export const Route = createRootRouteWithContext<{ queryClient: QueryClient; }>()({
     ssr: false,
     beforeLoad: async ({ context: { queryClient } }) => {
         return queryClient.ensureQueryData(authOptions);
@@ -32,20 +33,23 @@ function RootComponent() {
 
     return (
         <html lang="en" className="dark" suppressHydrationWarning>
-        <head>
-            <HeadContent/>
-        </head>
-        <body>
+            <head>
+                <HeadContent/>
+            </head>
+            <body>
 
-        <Toaster richColors/>
-        <Outlet/>
+                <TooltipProvider>
+                    <Toaster>
+                        <Outlet/>
+                    </Toaster>
+                </TooltipProvider>
 
-        {import.meta.env.DEV &&
-            <ReactQueryDevtools buttonPosition="bottom-right"/>
-        }
+                {import.meta.env.DEV &&
+                    <ReactQueryDevtools buttonPosition="bottom-right"/>
+                }
 
-        <Scripts/>
-        </body>
+                <Scripts/>
+            </body>
         </html>
     );
 }

@@ -1,6 +1,6 @@
-import {toast} from "sonner";
 import {useState} from "react";
 import authClient from "@/lib/utils/auth-client";
+import {toast} from "@/lib/client/components/ui/toast";
 import {createFileRoute} from "@tanstack/react-router";
 import {Button} from "@/lib/client/components/ui/button";
 import {Features} from "@/lib/client/components/homepage/features";
@@ -24,10 +24,10 @@ function HomePage() {
             },
             onError: (ctx) => {
                 setIsLoading(false);
-                toast.error(ctx.error.message);
+                toast.add({ type: "error", title: ctx.error.message });
             },
-        })
-    }
+        });
+    };
 
     return (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">

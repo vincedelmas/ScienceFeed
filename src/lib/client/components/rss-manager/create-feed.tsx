@@ -1,8 +1,8 @@
-import {toast} from "sonner";
 import React, {useState} from "react";
 import {useForm} from "react-hook-form";
 import {Loader2, Plus} from "lucide-react";
 import {CreateRssFeed} from "@/lib/schemas/schemas";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
 import {Button} from "@/lib/client/components/ui/button";
 import {useCreateRssFeedMutation} from "@/lib/client/react-query/mutations";
@@ -19,7 +19,7 @@ export function CreateNewRSSFeed() {
             url: "",
             journal: "",
             publisher: "",
-        }
+        },
     });
 
     const handleOpenChange = (nextOpen: boolean) => {
@@ -37,28 +37,40 @@ export function CreateNewRSSFeed() {
                 url: data.url.trim(),
                 journal: data.journal.trim(),
                 publisher: data.publisher.trim(),
-            }
+            },
         }, {
-            onError: (error) => toast.error(error?.message ?? "Failed to add this RSS Feed"),
+            onError: (error) => {
+                return toast.add({ type: "error", title: error?.message ?? "Failed to add this RSS Feed" });
+            },
             onSuccess: () => {
                 form.reset();
                 setOpen(false);
-                toast.success("RSS Feed successfully added");
+                toast.add({ type: "success", title: "RSS Feed successfully added" });
             },
         });
     };
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button size="sm" variant="ghost" className="w-full border border-primary/30 bg-primary/15 hover:bg-primary/25 sm:w-auto">
-                    <Plus className="size-4"/> Add RSS Feed
-                </Button>
+            <DialogTrigger
+                render={
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        className="w-full border border-primary/30 bg-primary/15 hover:bg-primary/25 sm:w-auto"
+                    />
+                }
+            >
+                <Plus className="size-4"/> Add RSS Feed
             </DialogTrigger>
             <DialogContent className="border-border-subtle bg-surface-elevated">
                 <DialogHeader>
-                    <DialogTitle>Add RSS Feed</DialogTitle>
-                    <DialogDescription>Add a new RSS feed to your account.</DialogDescription>
+                    <DialogTitle>
+                        Add RSS Feed
+                    </DialogTitle>
+                    <DialogDescription>
+                        Add a new RSS feed to your account.
+                    </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -77,49 +89,58 @@ export function CreateNewRSSFeed() {
                                     }
                                 },
                             }}
-                            render={({ field }) =>
+                            render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>URL</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            placeholder="https://feeds.rsc.org/rss/cp"
-                                        />
-                                    </FormControl>
+                                    <FormControl
+                                        render={
+                                            <Input
+                                                {...field}
+                                                placeholder="https://feeds.rsc.org/rss/cp"
+                                            />
+                                        }
+                                    />
                                     <FormMessage/>
                                 </FormItem>
-                            }
+                            )}
                         />
                         <FormField
                             control={form.control}
                             name="journal"
                             rules={{ required: { value: true, message: "Journal name cannot be empty" } }}
-                            render={({ field }) =>
+                            render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Journal</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Journal name" {...field}/>
-                                    </FormControl>
+                                    <FormControl
+                                        render={
+                                            <Input
+                                                placeholder="Journal name"
+                                                {...field}
+                                            />
+                                        }
+                                    />
                                     <FormMessage/>
                                 </FormItem>
-                            }
+                            )}
                         />
                         <FormField
                             control={form.control}
                             name="publisher"
                             rules={{ required: { value: true, message: "Publisher name cannot be empty" } }}
-                            render={({ field }) =>
+                            render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Publisher</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            {...field}
-                                            placeholder="Publisher name"
-                                        />
-                                    </FormControl>
+                                    <FormControl
+                                        render={
+                                            <Input
+                                                {...field}
+                                                placeholder="Publisher name"
+                                            />
+                                        }
+                                    />
                                     <FormMessage/>
                                 </FormItem>
-                            }
+                            )}
                         />
                         <Button
                             type="submit"

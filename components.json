@@ -1,7 +1,7 @@
 {
     "$schema": "https://ui.shadcn.com/schema.json",
     "iconLibrary": "lucide",
-    "style": "new-york",
+    "style": "base-nova",
     "rsc": false,
     "tsx": true,
     "tailwind": {
