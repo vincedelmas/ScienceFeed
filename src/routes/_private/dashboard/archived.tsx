@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_private/dashboard/archived")({
     validateSearch: userArticlesSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
     loader: ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(userArchivedOptions(search));
+        return queryClient.query({ ...userArchivedOptions(search), staleTime: "static" });
     },
     component: ArchivedPage,
 });

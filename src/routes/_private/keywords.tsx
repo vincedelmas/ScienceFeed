@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_private/keywords")({
     staticData: {navigation: navigation.keywords},
     component: KeywordManagerPage,
     loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(userKeywordsOptions);
+        return queryClient.query({ ...userKeywordsOptions, staleTime: "static" });
     },
 });
 

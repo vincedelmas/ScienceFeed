@@ -11,7 +11,7 @@ import {CreateNewRSSFeed} from "@/lib/client/components/rss-manager/create-feed"
 export const Route = createFileRoute("/_private/rss-manager")({
     staticData: {navigation: navigation.feeds},
     loader: ({ context: { queryClient } }) => {
-        return queryClient.ensureQueryData(rssManagerOptions);
+        return queryClient.query({ ...rssManagerOptions, staleTime: "static" });
     },
     component: RssManager,
 });

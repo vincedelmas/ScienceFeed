@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_private/dashboard/articles")({
     validateSearch: userArticlesSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
     loader: ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(userArticlesOptions(search));
+        return queryClient.query({ ...userArticlesOptions(search), staleTime: "static" });
     },
     component: ArticlesPage,
 });

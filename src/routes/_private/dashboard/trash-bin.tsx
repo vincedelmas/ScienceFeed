@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_private/dashboard/trash-bin")({
     validateSearch: userArticlesSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
     loader: ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.ensureQueryData(userDeletedOptions(search));
+        return queryClient.query({ ...userDeletedOptions(search), staleTime: "static" });
     },
     component: TrashBinPage,
 });
