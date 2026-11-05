@@ -21,7 +21,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient; }>()
             { title: "ScienceFeed" },
             { name: "description", content: "A science rss feed for the web." },
         ],
-        links: [{ rel: "stylesheet", href: appCss }],
+        links: [
+            { rel: "stylesheet", href: appCss },
+            { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+        ],
     }),
     component: RootComponent,
     shellComponent: RootComponent,

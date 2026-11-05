@@ -1,38 +1,26 @@
-import {Rss, Search, User} from "lucide-react";
+import {Rss, Search, Bookmark} from "lucide-react";
 
 
 const features = [
-    {
-        icon: <Rss className="h-8 w-8 text-blue-500"/>,
-        title: "RSS Integration",
-        description: "Add your favorite science RSS feeds to your profile"
-    },
-    {
-        icon: <Search className="h-8 w-8 text-blue-500"/>,
-        title: "Keyword Filtering",
-        description: "Specify keywords to filter articles that interest you"
-    },
-    {
-        icon: <User className="h-8 w-8 text-blue-500"/>,
-        title: "Personalized Feed",
-        description: "Get a curated feed of science articles tailored to your interests"
-    }
+    {icon: Rss, title: "RSS feeds", description: "Add and manage the feeds you want to follow."},
+    {icon: Search, title: "Keyword filters", description: "Filter incoming articles by your keywords."},
+    {icon: Bookmark, title: "Article management", description: "Archive articles or move them to the trash."},
 ];
 
 
 export const Features = () => (
-    <section className="bg-gray-800 rounded-xl">
-        <div className="px-8 py-4 pb-8">
-            <h2 className="text-3xl font-bold text-center mb-12">Features</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-                {features.map((feature, idx) =>
-                    <div key={idx} className="text-center">
-                        <div className="mb-2 flex justify-center">{feature.icon}</div>
-                        <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
-                        <p className="text-gray-400 text-center">{feature.description}</p>
+    <section id="how-it-works" aria-labelledby="features-title" className="border-t border-border-subtle py-8">
+        <h2 id="features-title" className="mb-6 text-lg font-semibold">What it does</h2>
+        <div className="grid gap-4 md:grid-cols-3">
+            {features.map(({icon: Icon, title, description}) =>
+                <div key={title} className="py-2">
+                    <div className="mb-5 flex items-center gap-3 text-primary">
+                        <Icon className="size-5" aria-hidden="true"/>
                     </div>
-                )}
-            </div>
+                    <h3 className="mb-3 text-base font-medium">{title}</h3>
+                    <p className="max-w-sm text-sm leading-relaxed text-foreground-muted">{description}</p>
+                </div>
+            )}
         </div>
     </section>
 );

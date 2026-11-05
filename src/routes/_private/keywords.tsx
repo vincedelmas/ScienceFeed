@@ -1,3 +1,4 @@
+import {navigation} from "@/lib/client/components/dashboard/navigation";
 import {useState} from "react";
 import {cn} from "@/lib/utils/utils";
 import {UserKeyword} from "@/lib/types/types";
@@ -14,6 +15,7 @@ import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, A
 
 
 export const Route = createFileRoute("/_private/keywords")({
+    staticData: {navigation: navigation.keywords},
     component: KeywordManagerPage,
     loader: ({ context: { queryClient } }) => {
         return queryClient.ensureQueryData(userKeywordsOptions);

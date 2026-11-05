@@ -1,3 +1,4 @@
+import {navigation} from "@/lib/client/components/dashboard/navigation";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {rssManagerOptions} from "@/lib/client/react-query";
@@ -8,6 +9,7 @@ import {CreateNewRSSFeed} from "@/lib/client/components/rss-manager/create-feed"
 
 
 export const Route = createFileRoute("/_private/rss-manager")({
+    staticData: {navigation: navigation.feeds},
     loader: ({ context: { queryClient } }) => {
         return queryClient.ensureQueryData(rssManagerOptions);
     },

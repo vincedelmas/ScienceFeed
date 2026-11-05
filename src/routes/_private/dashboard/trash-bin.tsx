@@ -1,3 +1,4 @@
+import {navigation} from "@/lib/client/components/dashboard/navigation";
 import {createFileRoute} from "@tanstack/react-router";
 import {userDeletedOptions} from "@/lib/client/react-query";
 import {userArticlesSearchSchema} from "@/lib/schemas/schemas";
@@ -5,6 +6,7 @@ import {ArticleDashboard} from "@/lib/client/components/articles/article-dashboa
 
 
 export const Route = createFileRoute("/_private/dashboard/trash-bin")({
+    staticData: {navigation: navigation.trash},
     validateSearch: userArticlesSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
     loader: ({ context: { queryClient }, deps: { search } }) => {
