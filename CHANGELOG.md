@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0](https://github.com/vincedelmas/ScienceFeed/compare/v1.1.1...v1.2.0) (2026-11-05)
+
+
+### Features
+
+* refresh homepage and unify app branding ([c2b2eaa](https://github.com/vincedelmas/ScienceFeed/commit/c2b2eaa26d6eb6428aac6080d32c5b80ba7740df))
+
+
+### Bug Fixes
+
+* handle sign-in loading state and document production OAuth setup ([c2b2eaa](https://github.com/vincedelmas/ScienceFeed/commit/c2b2eaa26d6eb6428aac6080d32c5b80ba7740df))
+
+
+### Code Refactoring
+
+* unify sidebar navigation and route breadcrumbs ([c2b2eaa](https://github.com/vincedelmas/ScienceFeed/commit/c2b2eaa26d6eb6428aac6080d32c5b80ba7740df))
+
 ## [1.1.1](https://github.com/vincedelmas/ScienceFeed/compare/v1.1.0...v1.1.1) (2026-10-24)
 
 
