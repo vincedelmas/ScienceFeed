@@ -5,8 +5,8 @@ import {cleanHtmlWithRegex, findMatchingKeywordIds, parseRssFeed, RssFetchError,
 import {article, keyword, rssFeed, user, userArticle, userArticleKeyword, userRssFeed} from "@/lib/server/database/schema";
 
 
+const ACS_FEED_DELAY_MS = 500;
 const ACS_FEED_CONCURRENCY = 1;
-const ACS_FEED_DELAY_MS = 10_000;
 const GENERAL_FEED_CONCURRENCY = 4;
 
 

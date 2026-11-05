@@ -1,19 +1,20 @@
-import {FileEdit, Rss} from "lucide-react";
 import {formatDateTime} from "@/lib/utils/utils";
 import {useAuth} from "@/lib/client/hooks/use-auth";
+import {FileEdit, Loader2, Rss} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
 
 
 interface OptionsMenuProps {
     isEditing: boolean;
+    isRefreshing: boolean;
     showRssFetcher?: boolean;
     onEditModeClick: () => void;
     onRssFetcherClick: () => void;
 }
 
 
-export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, showRssFetcher = true }: OptionsMenuProps) => {
+export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, isRefreshing, showRssFetcher = true }: OptionsMenuProps) => {
     const { currentUser } = useAuth();
     const lastRssUpdate = formatDateTime(currentUser?.lastRssUpdate, { includeTime: true, useLocalTz: true });
 
@@ -29,18 +30,24 @@ export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, sho
                             <Button
                                 size="sm"
                                 variant="outline"
-                                disabled={isEditing}
+                                aria-busy={isRefreshing}
                                 onClick={onRssFetcherClick}
                                 className="w-full sm:w-auto"
+                                disabled={isEditing || isRefreshing}
                             />
                         }
                     >
-                        <Rss className="size-3.5 mr-1"/> Update Feeds
+                        {isRefreshing
+                            ? <Loader2 className="size-3.5 mr-1 animate-spin" aria-hidden="true"/>
+                            : <Rss className="size-3.5 mr-1" aria-hidden="true"/>
+                        }
+                        {isRefreshing
+                            ? "Updating feeds…"
+                            : "Update Feeds"
+                        }
                     </TooltipTrigger>
                     <TooltipContent side="top" align="end" className="text-sm">
-                        <div>
-                            {`Last update: ${lastRssUpdate}`}
-                        </div>
+                        Last update: {lastRssUpdate}
                     </TooltipContent>
                 </Tooltip>
             )}

@@ -1,4 +1,3 @@
-import {cn} from "@/lib/utils/utils";
 import {useEffect, useState} from "react";
 import {ArticleBulkActions} from "@/lib/types/types";
 import {toast} from "@/lib/client/components/ui/toast";
@@ -146,7 +145,7 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
 
     return (
         <PageTitle title={`${title} (${apiData.pagination.total})`} subtitle={subtitle}>
-            <div className={cn(rssFetcherMutation.isPending && "opacity-50 pointer-events-none")}>
+            <div>
                 <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-baseline lg:justify-between">
                     <InputSearch
                         search={searchQuery}
@@ -159,7 +158,15 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
                         onEditModeClick={onEditModeClick}
                         showRssFetcher={mode === "active"}
                         onRssFetcherClick={onRssFetcherClick}
+                        isRefreshing={rssFetcherMutation.isPending}
                     />
+                </div>
+                <div role="status" aria-live="polite" aria-atomic="true">
+                    {rssFetcherMutation.isPending &&
+                        <p className="mt-3 text-sm text-muted-foreground">
+                            Updating your feeds. You can keep browsing while we check for new articles.
+                        </p>
+                    }
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">
                     <KeywordsBadge
