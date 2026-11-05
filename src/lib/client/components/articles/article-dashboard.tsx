@@ -11,6 +11,7 @@ import {InputSearch} from "@/lib/client/components/articles/input-search";
 import {ArticleCard} from "@/lib/client/components/articles/article-card";
 import {KeywordsBadge} from "@/lib/client/components/articles/keywords-badge";
 import {EditionButtons} from "@/lib/client/components/articles/edition-buttons";
+import {Progress, ProgressLabel, ProgressValue} from "@/lib/client/components/ui/progress";
 import {UserArticlesSearch, userArticlesSearchSchema, UserArticleStatus} from "@/lib/schemas/schemas";
 import {useArchiveArticles, useDeleteArticles, useRssFetcher} from "@/lib/client/react-query/mutations";
 
@@ -37,6 +38,8 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
     const [selectedArticles, setSelectedArticles] = useState<number[]>([]);
     const apiData = useSuspenseQuery(userArticleListOptions(mode, filters)).data;
     const [activeKeywordsIds, setActiveKeywordsIds] = useState<number[]>(filters.keywordsIds ?? []);
+
+    const refreshProgress = rssFetcherMutation.progress;
     const visibleArticleIds = apiData.articles.map((article) => article.id);
 
     const visibleArticleIdsKey = visibleArticleIds.join(",");
@@ -162,10 +165,25 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
                     />
                 </div>
                 <div role="status" aria-live="polite" aria-atomic="true">
-                    {rssFetcherMutation.isPending &&
-                        <p className="mt-3 text-sm text-muted-foreground">
-                            Updating your feeds. You can keep browsing while we check for new articles.
-                        </p>
+                    {rssFetcherMutation.isPending && refreshProgress &&
+                        <div className="mt-4 flex flex-col gap-2 rounded-lg border p-3">
+                            <Progress value={refreshProgress.completed} max={refreshProgress.total || 1}>
+                                <ProgressLabel>
+                                    {refreshProgress.phase === "saving"
+                                        ? "Saving matching articles…"
+                                        : "Checking feeds…"
+                                    }
+                                </ProgressLabel>
+                                <ProgressValue>
+                                    {() => `${refreshProgress.completed} / ${refreshProgress.total} feeds`}
+                                </ProgressValue>
+                            </Progress>
+                            <p className="text-sm text-muted-foreground">
+                                {refreshProgress.journal ? `Last checked: ${refreshProgress.journal}. ` : ""}
+                                {refreshProgress.failed > 0 ? `${refreshProgress.failed} failed. ` : ""}
+                                You can keep browsing.
+                            </p>
+                        </div>
                     }
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">
@@ -211,8 +229,12 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
                                 showDeleteAction={config.showDeleteAction}
                                 onDeleteClick={(articleIds) => onDeleteClick(articleIds, true)}
                                 onArchiveClick={(articleIds) => {
-                                    if (mode === "deleted") onDeleteClick(articleIds, false);
-                                    else onArchiveClick(articleIds, mode === "active");
+                                    if (mode === "deleted") {
+                                        onDeleteClick(articleIds, false);
+                                    }
+                                    else {
+                                        onArchiveClick(articleIds, mode === "active");
+                                    }
                                 }}
                             />
                         )}

@@ -1,5 +1,8 @@
+import {RSS_REFRESH_COOLDOWN_MINUTES} from "@/lib/utils/constants";
 import {db} from "@/lib/server/database/db";
 import {createServerFn} from "@tanstack/react-start";
+import type {RssRefreshEvent} from "@/lib/types/rss-refresh";
+import {setResponseHeader} from "@tanstack/react-start/server";
 import {fetchAndFilterArticles} from "@/lib/utils/fetch-articles";
 import {authMiddleware} from "@/lib/server/middlewares/authentication";
 import {and, eq, inArray, isNull, like, lte, or, sql} from "drizzle-orm";
@@ -127,7 +130,6 @@ export const fetchUserRssFeeds = createServerFn({ method: "POST" })
     .middleware([authMiddleware])
     .handler(async ({ context: { currentUser } }) => {
         const now = new Date();
-        const DELTA_MINUTES = 30;
 
         const activeKeywords = await db
             .select({ name: keyword.name })
@@ -143,7 +145,7 @@ export const fetchUserRssFeeds = createServerFn({ method: "POST" })
             .set({ lastRssUpdate: sql`(CURRENT_TIMESTAMP)` })
             .where(and(
                 eq(user.id, currentUser.id),
-                or(isNull(user.lastRssUpdate), lte(user.lastRssUpdate, sql`datetime('now', ${`-${DELTA_MINUTES} minutes`})`)),
+                or(isNull(user.lastRssUpdate), lte(user.lastRssUpdate, sql`datetime('now', ${`-${RSS_REFRESH_COOLDOWN_MINUTES} minutes`})`)),
             ))
             .returning({ lastRssUpdate: user.lastRssUpdate });
 
@@ -160,7 +162,7 @@ export const fetchUserRssFeeds = createServerFn({ method: "POST" })
                 : rawLastUpdate;
 
             const lastUpdate = normedLastUpdate ? new Date(normedLastUpdate) : now;
-            const nextAllowedUpdate = new Date(lastUpdate.getTime() + (DELTA_MINUTES * 60 * 1000));
+            const nextAllowedUpdate = new Date(lastUpdate.getTime() + (RSS_REFRESH_COOLDOWN_MINUTES * 60 * 1000));
 
             const diffInMs = Math.max(0, nextAllowedUpdate.getTime() - now.getTime());
             const diffInMin = Math.max(1, Math.ceil(diffInMs / (1000 * 60)));
@@ -168,17 +170,40 @@ export const fetchUserRssFeeds = createServerFn({ method: "POST" })
             return { warn: `RSS Fetcher will be available in ${diffInMin} minutes` };
         }
 
-        const result = await fetchAndFilterArticles(currentUser.id)
+        let cancelled = false;
+        setResponseHeader("X-Accel-Buffering", "no");
 
-        if (result.failedFeeds.length > 0) {
-            const failedLabels = result.failedFeeds
-                .slice(0, 3)
-                .map((feed) => `${feed.publisher} - ${feed.journal}`)
-                .join(", ");
+        return new ReadableStream<RssRefreshEvent>({
+            async start(controller) {
+                try {
+                    const result = await fetchAndFilterArticles(currentUser.id, (progress) => {
+                        if (!cancelled) controller.enqueue({ type: "progress", progress });
+                    });
 
-            return {
-                failedFeeds: result.failedFeeds,
-                warn: `${result.failedFeeds.length} feed(s) could not be fetched: ${failedLabels}`,
-            }
-        }
+                    if (cancelled) return;
+
+                    const failedLabels = result.failedFeeds
+                        .slice(0, 3)
+                        .map((feed) => `${feed.publisher} - ${feed.journal}`)
+                        .join(", ");
+
+                    controller.enqueue({
+                        type: "complete",
+                        processedFeeds: result.processedFeeds,
+                        failedFeeds: result.failedFeeds.length,
+                        warn: result.failedFeeds.length > 0
+                            ? `${result.failedFeeds.length} feed(s) could not be fetched: ${failedLabels}`
+                            : undefined,
+                    });
+
+                    controller.close();
+                }
+                catch (error) {
+                    if (!cancelled) controller.error(error);
+                }
+            },
+            cancel() {
+                cancelled = true;
+            },
+        });
     })

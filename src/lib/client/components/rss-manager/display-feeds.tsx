@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import {UserRssFeed} from "@/lib/types/types";
-import {formatDateTime} from "@/lib/utils/utils";
+import {formatDateTime} from "@/lib/utils/date";
 import {toast} from "@/lib/client/components/ui/toast";
 import {AlertTriangle, Rss, Trash2} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";

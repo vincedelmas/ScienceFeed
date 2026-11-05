@@ -1,6 +1,6 @@
 import * as React from "react";
 import {Dialog as SheetPrimitive} from "@base-ui/react/dialog";
-import {cn} from "@/lib/utils/utils";
+import {cn} from "@/lib/utils/classnames";
 import {Button} from "@/lib/client/components/ui/button";
 import {XIcon} from "lucide-react";
 

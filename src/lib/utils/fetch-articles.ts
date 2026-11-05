@@ -1,6 +1,7 @@
 import pLimit from "p-limit";
 import {db} from "@/lib/server/database/db";
 import {and, eq, inArray, sql} from "drizzle-orm";
+import type {RssRefreshProgress} from "@/lib/types/rss-refresh";
 import {cleanHtmlWithRegex, findMatchingKeywordIds, parseRssFeed, RssFetchError, RssItem} from "@/lib/utils/rss-parser";
 import {article, keyword, rssFeed, user, userArticle, userArticleKeyword, userRssFeed} from "@/lib/server/database/schema";
 
@@ -49,7 +50,7 @@ function isAcsFeed(url: string) {
 }
 
 
-export async function fetchAndFilterArticles(targetUserId?: number): Promise<FetchArticlesResult> {
+export async function fetchAndFilterArticles(targetUserId?: number, onProgress?: (progress: RssRefreshProgress) => void): Promise<FetchArticlesResult> {
     const userFilter = targetUserId ? eq(user.id, targetUserId) : undefined;
 
     const selectedUsers = await db
@@ -96,6 +97,9 @@ export async function fetchAndFilterArticles(targetUserId?: number): Promise<Fet
         .select()
         .from(rssFeed)
         .where(inArray(rssFeed.id, allRssFeedIds));
+
+    let completed = 0;
+    onProgress?.({ phase: "fetching", completed, total: feeds.length, failed: 0 });
 
     let lastAcsFetchAt = 0;
     const acsLimit = pLimit(ACS_FEED_CONCURRENCY);
@@ -163,8 +167,20 @@ export async function fetchAndFilterArticles(targetUserId?: number): Promise<Fet
                     publisher: f.publisher,
                 });
             }
+            finally {
+                completed++;
+                onProgress?.({
+                    completed,
+                    phase: "fetching",
+                    journal: f.journal,
+                    total: feeds.length,
+                    failed: result.failedFeeds.length,
+                });
+            }
         }),
     ));
+
+    onProgress?.({ phase: "saving", completed, total: feeds.length, failed: result.failedFeeds.length });
 
     const allLinks = new Set<string>();
     for (const { parsed } of parsedById.values()) {

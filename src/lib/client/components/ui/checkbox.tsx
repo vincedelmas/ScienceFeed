@@ -1,4 +1,4 @@
-import {cn} from "@/lib/utils/utils";
+import {cn} from "@/lib/utils/classnames";
 import {CheckIcon} from "lucide-react";
 import {Checkbox as CheckboxPrimitive} from "@base-ui/react/checkbox";
 

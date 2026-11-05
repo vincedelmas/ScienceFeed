@@ -1,12 +1,3 @@
-import {twMerge} from "tailwind-merge";
-import {type ClassValue, clsx} from "clsx";
-
-
-export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs));
-}
-
-
 interface FormatDateTimeOptions {
     onlyYear?: boolean;
     useLocalTz?: boolean;
@@ -14,7 +5,7 @@ interface FormatDateTimeOptions {
 }
 
 
-const parseDateInput = (dateInput: string | number) => {
+export const parseDateInput = (dateInput: string | number) => {
     if (typeof dateInput === "number") {
         return new Date(dateInput.toString().length === 10 ? dateInput * 1000 : dateInput);
     }

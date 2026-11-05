@@ -1,4 +1,4 @@
-import {cn} from "@/lib/utils/utils";
+import {cn} from "@/lib/utils/classnames";
 import {ArticleBulkActions} from "@/lib/types/types";
 import {Button} from "@/lib/client/components/ui/button";
 

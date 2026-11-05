@@ -1,5 +1,5 @@
 import * as React from "react";
-import {cn} from "@/lib/utils/utils";
+import {cn} from "@/lib/utils/classnames";
 import {useRender} from "@base-ui/react/use-render";
 import {mergeProps} from "@base-ui/react/merge-props";
 import {ChevronRightIcon, MoreHorizontalIcon} from "lucide-react";

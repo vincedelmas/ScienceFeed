@@ -1,6 +1,6 @@
 import {navigation} from "@/lib/client/components/dashboard/navigation";
 import {useState} from "react";
-import {cn} from "@/lib/utils/utils";
+import {cn} from "@/lib/utils/classnames";
 import {UserKeyword} from "@/lib/types/types";
 import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";

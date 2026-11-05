@@ -1,5 +1,5 @@
 import * as React from "react";
-import {cn} from "@/lib/utils/utils";
+import {cn} from "@/lib/utils/classnames";
 import {Command as CommandPrimitive} from "cmdk";
 import {CheckIcon, SearchIcon} from "lucide-react";
 import {InputGroup, InputGroupAddon} from "@/lib/client/components/ui/input-group";

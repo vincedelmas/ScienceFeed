@@ -1,6 +1,6 @@
 import * as React from "react";
 import {Menu as MenuPrimitive} from "@base-ui/react/menu";
-import {cn} from "@/lib/utils/utils";
+import {cn} from "@/lib/utils/classnames";
 import {ChevronRightIcon, CheckIcon} from "lucide-react";
 
 

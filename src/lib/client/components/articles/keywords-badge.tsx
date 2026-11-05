@@ -1,4 +1,4 @@
-import {cn} from "@/lib/utils/utils";
+import {cn} from "@/lib/utils/classnames";
 import {Badge} from "@/lib/client/components/ui/badge";
 
 

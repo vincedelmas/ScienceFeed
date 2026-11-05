@@ -13,7 +13,7 @@
     },
     "aliases": {
         "lib": "@/lib",
-        "utils": "@/lib/utils/utils",
+        "utils": "@/lib/utils/classnames",
         "hooks": "@/lib/client/hooks",
         "ui": "@/lib/client/components/ui",
         "components": "@/lib/client/components"

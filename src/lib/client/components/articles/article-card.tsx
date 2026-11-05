@@ -1,5 +1,6 @@
 import {UserArticle} from "@/lib/types/types";
-import {cn, formatDateTime} from "@/lib/utils/utils";
+import {cn} from "@/lib/utils/classnames";
+import {formatDateTime} from "@/lib/utils/date";
 import {Card} from "@/lib/client/components/ui/card";
 import {Badge} from "@/lib/client/components/ui/badge";
 import {Button} from "@/lib/client/components/ui/button";

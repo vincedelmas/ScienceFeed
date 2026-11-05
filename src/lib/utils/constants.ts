@@ -1,0 +1,1 @@
+export const RSS_REFRESH_COOLDOWN_MINUTES = 30;

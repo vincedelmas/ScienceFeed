@@ -1,7 +1,9 @@
+import {useState} from "react";
 import {toast} from "@/lib/client/components/ui/toast";
 import {useMutation, useQueryClient} from "@tanstack/react-query";
 import {postGeneralSettings} from "@/lib/server/functions/settings";
 import {archiveArticles, deleteArticles} from "@/lib/server/functions/articles";
+import type {RssRefreshEvent, RssRefreshProgress} from "@/lib/types/rss-refresh";
 import {addUserKeyword, deleteUserKeyword, toggleUserKeyword} from "@/lib/server/functions/keywords";
 import {authOptions, rssManagerOptions, userKeywordsOptions} from "@/lib/client/react-query/queryOptions";
 import {addRssFeedsToUser, createRssFeed, fetchUserRssFeeds, removeRssFeedsFromUser} from "@/lib/server/functions/rss-feeds";
@@ -138,22 +140,58 @@ export const useDeleteArticles = () => {
 
 export const useRssFetcher = () => {
     const queryClient = useQueryClient();
+    const [progress, setProgress] = useState<RssRefreshProgress | null>(null);
 
-    return useMutation({
-        mutationFn: fetchUserRssFeeds,
-        onError: () => toast.add({ type: "error", title: "An error occurred while running the RSS Fetcher" }),
+    const mutation = useMutation({
+        mutationFn: async () => {
+            setProgress(null);
+            const response = await fetchUserRssFeeds();
+            if (!(response instanceof ReadableStream)) return response;
+
+            const reader = response.getReader();
+            try {
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                        throw new Error("Feed refresh ended before completion");
+                    }
+
+                    const event: RssRefreshEvent = value;
+                    if (event.type === "complete") {
+                        return event;
+                    }
+
+                    setProgress(event.progress);
+                }
+            }
+            finally {
+                reader.releaseLock();
+            }
+        },
+        onError: () => {
+            return toast.add({ type: "error", title: "An error occurred while running the RSS Fetcher" });
+        },
         onSuccess: async (data) => {
+            if (!("processedFeeds" in data)) {
+                await queryClient.invalidateQueries({ queryKey: authOptions.queryKey });
+                return toast.add({ type: "warning", title: data.warn });
+            }
+
             await Promise.all([
                 invalidateArticleLists(queryClient),
                 queryClient.invalidateQueries({ queryKey: authOptions.queryKey }),
                 queryClient.invalidateQueries({ queryKey: rssManagerOptions.queryKey }),
             ]);
 
-            if (data) {
-                return toast.add({ type: "warning", title: data?.warn });
+            if (data.warn) {
+                return toast.add({ type: "warning", title: data.warn });
             }
 
-            toast.add({ type: "success", title: "RSS Fetcher successfully finished" });
+            if ("processedFeeds" in data) {
+                toast.add({ type: "success", title: `Updated ${data.processedFeeds} feed(s)` });
+            }
         },
     });
+
+    return { ...mutation, progress };
 }

@@ -2,7 +2,7 @@ import * as React from "react";
 import {mergeProps} from "@base-ui/react/merge-props";
 import {useRender} from "@base-ui/react/use-render";
 import {cva, type VariantProps} from "class-variance-authority";
-import {cn} from "@/lib/utils/utils";
+import {cn} from "@/lib/utils/classnames";
 import {useBreakpoint} from "@/lib/client/hooks/use-breakpoint";
 import {Button} from "@/lib/client/components/ui/button";
 import {Input} from "@/lib/client/components/ui/input";
