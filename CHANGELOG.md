@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.3.0](https://github.com/vincedelmas/ScienceFeed/compare/v1.2.0...v1.3.0) (2026-11-05)
+
+
+### Features
+
+* show live feed refresh progress ([ffaa016](https://github.com/vincedelmas/ScienceFeed/commit/ffaa0166b0fe21a3a6b3b31a7b7aae35565d6dad))
+
+
+### Bug Fixes
+
+* speed up ACS refresh and show loading feedback ([09d5570](https://github.com/vincedelmas/ScienceFeed/commit/09d5570cc15ace575c895357e409b7c44bd7e500))
+* update ACS RSS URLs and migrate existing feeds ([64abebd](https://github.com/vincedelmas/ScienceFeed/commit/64abebd5b37dc4692a823920923fe21a5b85f045))
+
+
+### Code Refactoring
+
+* adopt cn package and split utility helpers ([ffaa016](https://github.com/vincedelmas/ScienceFeed/commit/ffaa0166b0fe21a3a6b3b31a7b7aae35565d6dad))
+
 ## [1.2.0](https://github.com/vincedelmas/ScienceFeed/compare/v1.1.1...v1.2.0) (2026-11-05)
 
 
