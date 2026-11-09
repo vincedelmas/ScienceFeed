@@ -331,6 +331,7 @@ export function parseRssXml(xml: string): RssItem[] {
     const doc = parser.parse(xml);
 
     let items: unknown = doc?.rss?.channel?.item
+        ?? doc?.["rdf:RDF"]?.item
         ?? doc?.rdf?.item
         ?? doc?.channel?.item;
 

@@ -31,6 +31,27 @@ describe("RSS and Atom parsing", () => {
         }]);
     });
 
+    test("extracts articles from Nature RSS 1.0 RDF feeds", () => {
+        const xml = `
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/">
+                <channel rdf:about="https://www.nature.com/nphys.rss">
+                    <title>Nature Physics</title>
+                </channel>
+                <item rdf:about="https://www.nature.com/articles/example">
+                    <title>Physics article</title>
+                    <link>https://www.nature.com/articles/example</link>
+                    <description>Article summary</description>
+                </item>
+            </rdf:RDF>
+        `;
+
+        expect(parseRssXml(xml)).toEqual([{
+            title: "Physics article",
+            link: "https://www.nature.com/articles/example",
+            description: "Article summary",
+        }]);
+    });
+
     test("continues to extract text links from RSS items", () => {
         const xml = `
             <rss version="2.0">
