@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/vincedelmas/ScienceFeed/compare/v1.3.0...v1.3.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **rss:** parse Nature RDF feeds and update Physics feed URL ([353023c](https://github.com/vincedelmas/ScienceFeed/commit/353023c5cadeac665c2a37767b6a6c5e14ea637f))
+
 ## [1.3.0](https://github.com/vincedelmas/ScienceFeed/compare/v1.2.0...v1.3.0) (2026-11-05)
 
 
