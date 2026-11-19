@@ -324,7 +324,7 @@ function KeywordActionDialog({ action, onCancel, onConfirm }: KeywordActionDialo
 
     return (
         <AlertDialog open onOpenChange={(open) => !open && onCancel()}>
-            <AlertDialogContent className="max-w-md overflow-hidden border-border-subtle bg-surface-elevated p-0 shadow-2xl">
+            <AlertDialogContent className="max-w-md gap-0 overflow-hidden border-border-subtle bg-surface-elevated p-0 shadow-2xl">
                 <AlertDialogHeader className="flex flex-row items-start gap-4 p-6 pb-5 text-left">
                     <AlertDialogMedia
                         className={cn(
@@ -350,7 +350,7 @@ function KeywordActionDialog({ action, onCancel, onConfirm }: KeywordActionDialo
                         </AlertDialogDescription>
                     </div>
                 </AlertDialogHeader>
-                <AlertDialogFooter className="border-t border-border-subtle bg-surface-muted px-6 py-4">
+                <AlertDialogFooter className="mx-0 mb-0 border-t border-border-subtle bg-surface-muted px-6 py-4">
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction variant={isDelete ? "destructive" : "default"} onClick={onConfirm}>
                         {isDelete
