@@ -9,15 +9,15 @@ import {Pagination} from "@/lib/client/components/pagination";
 import {userArticleListOptions} from "@/lib/client/react-query";
 import {useRssFetcher} from "@/lib/client/react-query/mutations";
 import {buttonVariants} from "@/lib/client/components/ui/button";
-import {useDebounceCallback} from "@/lib/client/hooks/use-debounce";
+import {useArticleFilters} from "@/lib/client/hooks/use-article-filters";
 import {OptionsMenu} from "@/lib/client/components/articles/options-menu";
 import {InputSearch} from "@/lib/client/components/articles/input-search";
 import {ArticleCard} from "@/lib/client/components/articles/article-card";
 import {KeywordsBadge} from "@/lib/client/components/articles/keywords-badge";
 import {EditionButtons} from "@/lib/client/components/articles/edition-buttons";
+import type {UserArticlesSearch, UserArticleStatus} from "@/lib/schemas/schemas";
 import {useArticleBulkActions} from "@/lib/client/hooks/use-article-bulk-actions";
-import {Progress, ProgressLabel, ProgressValue} from "@/lib/client/components/ui/progress";
-import {UserArticlesSearch, userArticlesSearchSchema, UserArticleStatus} from "@/lib/schemas/schemas";
+import {RssRefreshStatus} from "@/lib/client/components/articles/rss-refresh-status";
 
 
 interface ArticleDashboardProps {
@@ -30,8 +30,6 @@ interface ArticleDashboardProps {
 
 
 const ARTICLE_COLUMNS_STORAGE_KEY = "sciencefeed.article-columns";
-const DEFAULT = { search: "", page: 1, keywordsIds: [] } satisfies ReturnType<typeof userArticlesSearchSchema.parse>;
-
 const columnToggleClassName = buttonVariants({
     size: "icon-xs",
     variant: "ghost",
@@ -42,11 +40,9 @@ const columnToggleClassName = buttonVariants({
 export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChange }: ArticleDashboardProps) {
     const config = modeConfig[mode];
     const rssFetcherMutation = useRssFetcher();
-    const refreshProgress = rssFetcherMutation.progress;
     const [columns, setColumns] = useState<"1" | "2">("2");
-    const [searchQuery, setSearchQuery] = useState(filters?.search ?? "");
-    const [activeKeywordsIds, setActiveKeywordsIds] = useState<number[]>(filters.keywordsIds ?? []);
     const { articles, keywords, pagination } = useSuspenseQuery(userArticleListOptions(mode, filters)).data;
+    const { searchQuery, setSearchQuery, activeKeywordIds, clearSearch, toggleKeyword } = useArticleFilters(filters, onSearchChange);
 
     const {
         isEditing, selectedArticles, isBulkActionPending, clearSelection, onEditModeClick,
@@ -59,49 +55,20 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
         }
     }, []);
 
-    const onResetClick = async () => {
-        setSearchQuery(DEFAULT.search);
-        await onSearchChange({ ...DEFAULT, keywordsIds: activeKeywordsIds });
-    };
-
     const onPageChange = async (newPage: number) => {
         clearSelection();
         await onSearchChange({ ...filters, page: newPage });
-    };
-
-    const onKeywordClick = async (keywordId: number) => {
-        setActiveKeywordsIds((prev) => prev.includes(keywordId)
-            ? prev.filter((k) => k !== keywordId)
-            : [...prev, keywordId]
-        );
-
-        const currentKeywordIds = filters.keywordsIds ?? [];
-
-        await onSearchChange({
-            ...filters,
-            page: 1,
-            keywordsIds: currentKeywordIds.includes(keywordId)
-                ? currentKeywordIds.filter((id) => id !== keywordId)
-                : [...currentKeywordIds, keywordId],
-        });
     };
 
     const onRssFetcherClick = () => {
         rssFetcherMutation.mutate(undefined);
     };
 
-    useDebounceCallback<UserArticlesSearch>(searchQuery, 350, onSearchChange, {
-        ...filters,
-        page: 1,
-        search: searchQuery,
-        keywordsIds: activeKeywordsIds,
-    });
-
     const paginationProps = {
         isDisabled: isEditing,
         onChangePage: onPageChange,
         totalPages: pagination.pages,
-        currentPage: filters.page ?? DEFAULT.page,
+        currentPage: filters.page ?? 1,
     };
 
     return (
@@ -111,7 +78,7 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
                     <InputSearch
                         search={searchQuery}
                         isDisabled={isEditing}
-                        onResetClick={onResetClick}
+                        onResetClick={clearSearch}
                         onChange={(ev) => setSearchQuery(ev.target.value)}
                     />
                     <div className="flex items-center gap-3">
@@ -144,35 +111,18 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
                         }
                     </div>
                 </div>
-                <div role="status" aria-live="polite" aria-atomic="true">
-                    {rssFetcherMutation.isPending && refreshProgress &&
-                        <div className="mt-4 flex flex-col gap-2 rounded-lg border p-3">
-                            <Progress value={refreshProgress.completed} max={refreshProgress.total || 1}>
-                                <ProgressLabel>
-                                    {refreshProgress.phase === "saving"
-                                        ? "Saving matching articles…"
-                                        : "Checking feeds…"
-                                    }
-                                </ProgressLabel>
-                                <ProgressValue>
-                                    {() => `${refreshProgress.completed} / ${refreshProgress.total} feeds`}
-                                </ProgressValue>
-                            </Progress>
-                            <p className="text-sm text-muted-foreground">
-                                {refreshProgress.journal ? `Last checked: ${refreshProgress.journal}. ` : ""}
-                                {refreshProgress.failed > 0 ? `${refreshProgress.failed} failed. ` : ""}
-                                You can keep browsing.
-                            </p>
-                        </div>
-                    }
-                </div>
+
+                <RssRefreshStatus
+                    progress={rssFetcherMutation.isPending ? rssFetcherMutation.progress : null}
+                />
+
                 <div className="mt-3 grid items-center gap-x-4 gap-y-2 sm:grid-cols-2">
                     <div className="flex min-w-0 flex-wrap gap-2">
                         <KeywordsBadge
                             keywords={keywords}
                             isDisabled={isEditing}
-                            onKeywordClick={onKeywordClick}
-                            activeKeywordsIds={activeKeywordsIds}
+                            onKeywordClick={toggleKeyword}
+                            activeKeywordsIds={activeKeywordIds}
                         />
                     </div>
                     <div className="h-8 min-w-0">
