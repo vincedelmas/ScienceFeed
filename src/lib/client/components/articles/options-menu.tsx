@@ -3,8 +3,8 @@ import {useAuth} from "@/lib/client/hooks/use-auth";
 import {FileEdit, Loader2, Rss} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 import {formatDateTime, parseDateInput} from "@/lib/utils/date";
-import {RSS_REFRESH_COOLDOWN_MINUTES} from "@/lib/utils/constants";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
+import {RSS_REFRESH_COOLDOWN_ENABLED, RSS_REFRESH_COOLDOWN_MINUTES} from "@/lib/utils/constants";
 
 
 interface OptionsMenuProps {
@@ -19,12 +19,12 @@ interface OptionsMenuProps {
 export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, isRefreshing, showRssFetcher = true }: OptionsMenuProps) => {
     const { currentUser } = useAuth();
     const [now, setNow] = useState(Date.now);
-    const nextRefreshAt = currentUser?.lastRssUpdate
+    const nextRefreshAt = RSS_REFRESH_COOLDOWN_ENABLED && currentUser?.lastRssUpdate
         ? parseDateInput(currentUser.lastRssUpdate).getTime() + RSS_REFRESH_COOLDOWN_MINUTES * 60_000
         : 0;
 
     useEffect(() => {
-        if (!showRssFetcher) return;
+        if (!RSS_REFRESH_COOLDOWN_ENABLED || !showRssFetcher) return;
         const interval = setInterval(() => setNow(Date.now()), 15_000);
         return () => clearInterval(interval);
     }, [showRssFetcher]);

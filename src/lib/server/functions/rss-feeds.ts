@@ -1,4 +1,3 @@
-import {RSS_REFRESH_COOLDOWN_MINUTES} from "@/lib/utils/constants";
 import {db} from "@/lib/server/database/db";
 import {createServerFn} from "@tanstack/react-start";
 import type {RssRefreshEvent} from "@/lib/types/rss-refresh";
@@ -7,6 +6,7 @@ import {fetchAndFilterArticles} from "@/lib/utils/fetch-articles";
 import {authMiddleware} from "@/lib/server/middlewares/authentication";
 import {and, eq, inArray, isNull, like, lte, or, sql} from "drizzle-orm";
 import {keyword, rssFeed, user, userRssFeed} from "@/lib/server/database/schema";
+import {RSS_REFRESH_COOLDOWN_ENABLED, RSS_REFRESH_COOLDOWN_MINUTES} from "@/lib/utils/constants";
 import {createRssFeedSchema, feedsIdsSchema, querySearchSchema, rssIdsSchema} from "@/lib/schemas/schemas";
 
 
@@ -145,7 +145,9 @@ export const fetchUserRssFeeds = createServerFn({ method: "POST" })
             .set({ lastRssUpdate: sql`(CURRENT_TIMESTAMP)` })
             .where(and(
                 eq(user.id, currentUser.id),
-                or(isNull(user.lastRssUpdate), lte(user.lastRssUpdate, sql`datetime('now', ${`-${RSS_REFRESH_COOLDOWN_MINUTES} minutes`})`)),
+                RSS_REFRESH_COOLDOWN_ENABLED
+                    ? or(isNull(user.lastRssUpdate), lte(user.lastRssUpdate, sql`datetime('now', ${`-${RSS_REFRESH_COOLDOWN_MINUTES} minutes`})`))
+                    : undefined,
             ))
             .returning({ lastRssUpdate: user.lastRssUpdate });
 
