@@ -433,9 +433,10 @@ export function findMatchingKeywordIds(keywords: { id: number; name: string }[],
 
 
 export function cleanHtmlWithRegex(html: string): string {
-    const noScriptStyle = html.replace(/<(script|style)[\s\S]*?>[\s\S]*?<\/\1>/gi, "");
-    const noTags = noScriptStyle.replace(/<[^>]*?>/g, "");
-    const cleanText = noTags.replace(/\s+/g, " ").trim();
-
-    return cleanText;
+    return html
+        .replace(/<(script|style)[\s\S]*?>[\s\S]*?<\/\1>/gi, "")
+        .replace(/<\/?(?:blockquote|br|div|h[1-6]|hr|li|p|section|td|th|tr)\b[^>]*>/gi, " ")
+        .replace(/<[^>]*?>/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
 }

@@ -1,3 +1,4 @@
+import {cn} from "@/lib/utils/classnames";
 import {ChevronLeft, ChevronRight} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
 
@@ -5,6 +6,7 @@ import {Button} from "@/lib/client/components/ui/button";
 interface PaginationProps {
     showNav?: boolean;
     totalPages: number;
+    className?: string;
     currentPage: number;
     maxVisible?: number;
     isDisabled?: boolean;
@@ -13,7 +15,7 @@ interface PaginationProps {
 
 
 export const Pagination = (props: PaginationProps) => {
-    const { currentPage, totalPages, onChangePage, isDisabled, showNav = true, maxVisible = 8 } = props;
+    const { className, currentPage, totalPages, onChangePage, isDisabled, showNav = true, maxVisible = 8 } = props;
 
     if (totalPages <= 1) {
         return null;
@@ -63,14 +65,17 @@ export const Pagination = (props: PaginationProps) => {
     };
 
     return (
-        <nav className="scrollbar-thin mt-8 flex w-full items-center overflow-x-auto overflow-y-hidden px-1" aria-label="Pagination navigation">
-            <ul className="mx-auto flex min-w-max items-center gap-1 sm:gap-2">
+        <nav
+            aria-label="Pagination navigation"
+            className={cn("scrollbar-thin mt-8 flex w-full items-center overflow-x-auto overflow-y-hidden px-1", className)}
+        >
+            <ul className="mx-auto flex min-w-max items-center gap-1 sm:gap-2 [&>li]:flex">
                 {showNav &&
                     <li>
                         <Button
                             size="sm"
-                            disabled={!canGoPrevious || isDisabled}
                             aria-label="Go to previous page"
+                            disabled={!canGoPrevious || isDisabled}
                             variant={canGoPrevious ? "secondary" : "ghost"}
                             onClick={() => handlePageChange(safePage - 1)}
                         >
@@ -81,12 +86,14 @@ export const Pagination = (props: PaginationProps) => {
                 {pages.map((page, idx) =>
                     <li key={`${page}-${idx}`}>
                         {page === "..." ?
-                            <span className="px-3 py-2 text-sm text-muted-foreground" aria-hidden="true">...</span>
+                            <span className="flex h-7 items-center px-3 text-sm text-muted-foreground" aria-hidden="true">
+                                ...
+                            </span>
                             :
                             <Button
                                 size="sm"
-                                aria-label={`Go to page ${page}`}
                                 disabled={isDisabled}
+                                aria-label={`Go to page ${page}`}
                                 onClick={() => handlePageChange(page)}
                                 variant={page === safePage ? "default" : "ghost"}
                                 aria-current={page === safePage ? "page" : undefined}

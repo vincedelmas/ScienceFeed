@@ -1,9 +1,14 @@
+import {cn} from "@/lib/utils/classnames";
 import {useEffect, useState} from "react";
+import {Toggle} from "@base-ui/react/toggle";
+import {Columns2, Square} from "lucide-react";
 import {ArticleBulkActions} from "@/lib/types/types";
 import {toast} from "@/lib/client/components/ui/toast";
 import {useSuspenseQuery} from "@tanstack/react-query";
+import {ToggleGroup} from "@base-ui/react/toggle-group";
 import {PageTitle} from "@/lib/client/components/page-title";
 import {Pagination} from "@/lib/client/components/pagination";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {userArticleListOptions} from "@/lib/client/react-query";
 import {useDebounceCallback} from "@/lib/client/hooks/use-debounce";
 import {OptionsMenu} from "@/lib/client/components/articles/options-menu";
@@ -25,7 +30,14 @@ interface ArticleDashboardProps {
 }
 
 
+const ARTICLE_COLUMNS_STORAGE_KEY = "sciencefeed.article-columns";
 const DEFAULT = { search: "", page: 1, keywordsIds: [] } satisfies ReturnType<typeof userArticlesSearchSchema.parse>;
+
+const columnToggleClassName = buttonVariants({
+    size: "icon-xs",
+    variant: "ghost",
+    className: "data-pressed:bg-accent data-pressed:text-accent-foreground",
+});
 
 
 export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChange }: ArticleDashboardProps) {
@@ -34,16 +46,23 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
     const deleteArticlesMutation = useDeleteArticles();
     const archiveArticlesMutation = useArchiveArticles();
     const [isEditing, setIsEditing] = useState(false);
+    const [columns, setColumns] = useState<"1" | "2">("2");
     const [searchQuery, setSearchQuery] = useState(filters?.search ?? "");
     const [selectedArticles, setSelectedArticles] = useState<number[]>([]);
-    const apiData = useSuspenseQuery(userArticleListOptions(mode, filters)).data;
     const [activeKeywordsIds, setActiveKeywordsIds] = useState<number[]>(filters.keywordsIds ?? []);
+    const { articles, keywords, pagination } = useSuspenseQuery(userArticleListOptions(mode, filters)).data;
 
     const refreshProgress = rssFetcherMutation.progress;
-    const visibleArticleIds = apiData.articles.map((article) => article.id);
+    const visibleArticleIds = articles.map((article) => article.id);
 
     const visibleArticleIdsKey = visibleArticleIds.join(",");
     const isBulkActionPending = archiveArticlesMutation.isPending || deleteArticlesMutation.isPending;
+
+    useEffect(() => {
+        if (localStorage.getItem(ARTICLE_COLUMNS_STORAGE_KEY) === "1") {
+            setColumns("1");
+        }
+    }, []);
 
     useEffect(() => {
         setSelectedArticles((prev) => {
@@ -54,23 +73,19 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
         });
     }, [visibleArticleIdsKey]);
 
-    const fetchData = async (params: UserArticlesSearch) => {
-        await onSearchChange(params);
-    };
-
     const onResetClick = async () => {
         setSearchQuery(DEFAULT.search);
-        await fetchData({ ...DEFAULT, keywordsIds: activeKeywordsIds });
+        await onSearchChange({ ...DEFAULT, keywordsIds: activeKeywordsIds });
     };
 
     const onPageChange = async (newPage: number) => {
         setSelectedArticles([]);
-        await fetchData({ ...filters, page: newPage });
+        await onSearchChange({ ...filters, page: newPage });
     };
 
     const onBulkActionClick = (action: ArticleBulkActions) => {
         if (action === "select") {
-            setSelectedArticles(apiData.articles.map((a) => a.id));
+            setSelectedArticles(visibleArticleIds);
         }
         else if (action === "deselect") {
             setSelectedArticles([]);
@@ -107,13 +122,14 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
             : [...prev, keywordId]
         );
 
-        const oldKeys = filters?.keywordsIds ?? [];
-        await fetchData({
+        const currentKeywordIds = filters.keywordsIds ?? [];
+
+        await onSearchChange({
             ...filters,
             page: 1,
-            keywordsIds: oldKeys.includes(keywordId)
-                ? oldKeys.filter((k) => k !== keywordId)
-                : [...oldKeys, keywordId],
+            keywordsIds: currentKeywordIds.includes(keywordId)
+                ? currentKeywordIds.filter((id) => id !== keywordId)
+                : [...currentKeywordIds, keywordId],
         });
     };
 
@@ -139,30 +155,59 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
         rssFetcherMutation.mutate(undefined);
     };
 
-    useDebounceCallback<UserArticlesSearch>(searchQuery, 350, fetchData, {
+    useDebounceCallback<UserArticlesSearch>(searchQuery, 350, onSearchChange, {
         ...filters,
         page: 1,
         search: searchQuery,
         keywordsIds: activeKeywordsIds,
     });
 
+    const paginationProps = {
+        isDisabled: isEditing,
+        onChangePage: onPageChange,
+        totalPages: pagination.pages,
+        currentPage: filters.page ?? DEFAULT.page,
+    };
+
     return (
-        <PageTitle title={`${title} (${apiData.pagination.total})`} subtitle={subtitle}>
+        <PageTitle title={title} count={pagination.total} subtitle={subtitle}>
             <div>
-                <div className="mt-3 flex flex-col gap-4 lg:flex-row lg:items-baseline lg:justify-between">
+                <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <InputSearch
                         search={searchQuery}
                         isDisabled={isEditing}
                         onResetClick={onResetClick}
                         onChange={(ev) => setSearchQuery(ev.target.value)}
                     />
-                    <OptionsMenu
-                        isEditing={isEditing}
-                        onEditModeClick={onEditModeClick}
-                        showRssFetcher={mode === "active"}
-                        onRssFetcherClick={onRssFetcherClick}
-                        isRefreshing={rssFetcherMutation.isPending}
-                    />
+                    <div className="flex items-center gap-3">
+                        <OptionsMenu
+                            isEditing={isEditing}
+                            onEditModeClick={onEditModeClick}
+                            showRssFetcher={mode === "active"}
+                            onRssFetcherClick={onRssFetcherClick}
+                            isRefreshing={rssFetcherMutation.isPending}
+                        />
+                        {articles.length > 0 &&
+                            <ToggleGroup
+                                value={[columns]}
+                                aria-label="Article columns"
+                                className="hidden h-7 shrink-0 items-center gap-0.5 rounded-lg border border-border-subtle
+                                bg-surface-muted p-px xl:flex"
+                                onValueChange={([value]) => {
+                                    if (!value) return;
+                                    setColumns(value);
+                                    localStorage.setItem(ARTICLE_COLUMNS_STORAGE_KEY, value);
+                                }}
+                            >
+                                <Toggle value="1" aria-label="1 column" title="1 column" className={columnToggleClassName}>
+                                    <Square aria-hidden="true"/>
+                                </Toggle>
+                                <Toggle value="2" aria-label="2 columns" title="2 columns" className={columnToggleClassName}>
+                                    <Columns2 aria-hidden="true"/>
+                                </Toggle>
+                            </ToggleGroup>
+                        }
+                    </div>
                 </div>
                 <div role="status" aria-live="polite" aria-atomic="true">
                     {rssFetcherMutation.isPending && refreshProgress &&
@@ -186,48 +231,49 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
                         </div>
                     }
                 </div>
-                <div className="mt-4 flex flex-wrap gap-3">
-                    <KeywordsBadge
-                        isDisabled={isEditing}
-                        keywords={apiData.keywords}
-                        onKeywordClick={onKeywordClick}
-                        activeKeywordsIds={activeKeywordsIds}
-                    />
+                <div className="mt-3 grid items-center gap-x-4 gap-y-2 sm:grid-cols-2">
+                    <div className="flex min-w-0 flex-wrap gap-2">
+                        <KeywordsBadge
+                            keywords={keywords}
+                            isDisabled={isEditing}
+                            onKeywordClick={onKeywordClick}
+                            activeKeywordsIds={activeKeywordsIds}
+                        />
+                    </div>
+                    <div className="h-8 min-w-0">
+                        <Pagination
+                            {...paginationProps}
+                            className="mt-0 ml-auto w-fit max-w-full"
+                        />
+                    </div>
                 </div>
                 {isEditing &&
                     <EditionButtons
                         selected={selectedArticles}
                         actions={config.bulkActions}
+                        totalVisible={articles.length}
                         isPending={isBulkActionPending}
                         onBulkActionClick={onBulkActionClick}
-                        totalVisible={apiData.articles.length}
                     />
                 }
-                <div className="mb-6 -mt-2">
-                    <Pagination
-                        isDisabled={isEditing}
-                        onChangePage={onPageChange}
-                        totalPages={apiData.pagination.pages}
-                        currentPage={filters?.page ?? DEFAULT.page}
-                    />
-                </div>
-                {apiData.articles.length === 0 ?
+                {articles.length === 0 ?
                     <div className="mt-10 rounded-md border border-dashed py-10 text-center text-sm text-muted-foreground">
                         {config.empty}
                     </div>
                     :
-                    <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-                        {apiData.articles.map((article) =>
+                    <div className={cn("mt-4 grid grid-cols-1 gap-4", columns === "2" && "xl:grid-cols-2")}>
+                        {articles.map((article) =>
                             <ArticleCard
                                 key={article.id}
                                 article={article}
                                 isEditing={isEditing}
+                                compact={columns === "1"}
                                 selected={selectedArticles}
                                 archiveIcon={config.archiveIcon}
                                 archiveTitle={config.archiveTitle}
                                 onSelectionClick={onSelectionClick}
                                 showDeleteAction={config.showDeleteAction}
-                                onDeleteClick={(articleIds) => onDeleteClick(articleIds, true)}
+                                onDeleteClick={onDeleteClick}
                                 onArchiveClick={(articleIds) => {
                                     if (mode === "deleted") {
                                         onDeleteClick(articleIds, false);
@@ -240,12 +286,10 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
                         )}
                     </div>
                 }
-                <div className="mt-3">
+                <div className="mt-11 h-8">
                     <Pagination
-                        isDisabled={isEditing}
-                        onChangePage={onPageChange}
-                        totalPages={apiData.pagination.pages}
-                        currentPage={filters?.page ?? DEFAULT.page}
+                        {...paginationProps}
+                        className="mt-0"
                     />
                 </div>
             </div>

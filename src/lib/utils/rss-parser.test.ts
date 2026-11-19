@@ -1,5 +1,6 @@
 import {describe, expect, test} from "bun:test";
 import {
+    cleanHtmlWithRegex,
     fetchSafeRssResponse,
     findMatchingKeywordIds,
     isPublicIpAddress,
@@ -81,6 +82,15 @@ describe("RSS and Atom parsing", () => {
         expect(withAuthor?.link).toBe("https://example.com/articles/2");
         expect(withAuthor?.authors).toBe("Jane Doe");
         expect(withoutAuthor?.authors).toBeNull();
+    });
+});
+
+
+describe("feed summary formatting", () => {
+    test("separates headings and paragraphs while preserving inline text", () => {
+        const html = '<img alt="Illustration"/><span class="paragraphSection"><div class="boxTitle">Conspectus</div>Atherosclerosis is a chronic disease.<p>We examine redox-active Fe<sup>2+</sup> probes.</p></span>';
+
+        expect(cleanHtmlWithRegex(html)).toBe("Conspectus Atherosclerosis is a chronic disease. We examine redox-active Fe2+ probes.");
     });
 });
 

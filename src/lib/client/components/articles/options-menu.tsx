@@ -19,6 +19,7 @@ interface OptionsMenuProps {
 export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, isRefreshing, showRssFetcher = true }: OptionsMenuProps) => {
     const { currentUser } = useAuth();
     const [now, setNow] = useState(Date.now);
+
     const nextRefreshAt = RSS_REFRESH_COOLDOWN_ENABLED && currentUser?.lastRssUpdate
         ? parseDateInput(currentUser.lastRssUpdate).getTime() + RSS_REFRESH_COOLDOWN_MINUTES * 60_000
         : 0;
@@ -33,9 +34,10 @@ export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, isR
     const lastRssUpdate = formatDateTime(currentUser?.lastRssUpdate, { includeTime: true, useLocalTz: true });
 
     return (
-        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
             <Button size="sm" onClick={onEditModeClick} variant="outline" className="w-full sm:w-auto">
-                <FileEdit className="size-3.5 mr-1"/> {isEditing ? "Exit Bulk Mode" : "Bulk Edit"}
+                <FileEdit className="size-3.5 mr-1"/>
+                {isEditing ? "Exit Bulk Mode" : "Bulk Edit"}
             </Button>
             {showRssFetcher &&
                 <Tooltip onOpenChange={(open) => {
