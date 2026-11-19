@@ -1,9 +1,9 @@
 import {useEffect, useState} from "react";
-import {RSS_REFRESH_COOLDOWN_MINUTES} from "@/lib/utils/constants";
-import {formatDateTime, parseDateInput} from "@/lib/utils/date";
 import {useAuth} from "@/lib/client/hooks/use-auth";
 import {FileEdit, Loader2, Rss} from "lucide-react";
 import {Button} from "@/lib/client/components/ui/button";
+import {formatDateTime, parseDateInput} from "@/lib/utils/date";
+import {RSS_REFRESH_COOLDOWN_MINUTES} from "@/lib/utils/constants";
 import {Tooltip, TooltipContent, TooltipTrigger} from "@/lib/client/components/ui/tooltip";
 
 
@@ -22,7 +22,6 @@ export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, isR
     const nextRefreshAt = currentUser?.lastRssUpdate
         ? parseDateInput(currentUser.lastRssUpdate).getTime() + RSS_REFRESH_COOLDOWN_MINUTES * 60_000
         : 0;
-    const remainingMinutes = Math.max(0, Math.ceil((nextRefreshAt - now) / 60_000));
 
     useEffect(() => {
         if (!showRssFetcher) return;
@@ -30,6 +29,7 @@ export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, isR
         return () => clearInterval(interval);
     }, [showRssFetcher]);
 
+    const remainingMinutes = Math.max(0, Math.ceil((nextRefreshAt - now) / 60_000));
     const lastRssUpdate = formatDateTime(currentUser?.lastRssUpdate, { includeTime: true, useLocalTz: true });
 
     return (
@@ -37,7 +37,7 @@ export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, isR
             <Button size="sm" onClick={onEditModeClick} variant="outline" className="w-full sm:w-auto">
                 <FileEdit className="size-3.5 mr-1"/> {isEditing ? "Exit Bulk Mode" : "Bulk Edit"}
             </Button>
-            {showRssFetcher && (
+            {showRssFetcher &&
                 <Tooltip onOpenChange={(open) => {
                     if (open) setNow(Date.now());
                 }}>
@@ -49,8 +49,8 @@ export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, isR
                                 aria-busy={isRefreshing}
                                 onClick={onRssFetcherClick}
                                 className="w-full sm:w-auto"
+                                focusableWhenDisabled={true}
                                 disabled={isEditing || isRefreshing || remainingMinutes > 0}
-                                focusableWhenDisabled
                             />
                         }
                     >
@@ -74,7 +74,7 @@ export const OptionsMenu = ({ isEditing, onEditModeClick, onRssFetcherClick, isR
                         </div>
                     </TooltipContent>
                 </Tooltip>
-            )}
+            }
         </div>
     );
 };

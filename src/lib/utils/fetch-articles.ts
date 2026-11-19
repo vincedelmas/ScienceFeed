@@ -1,6 +1,6 @@
 import pLimit from "p-limit";
 import {db} from "@/lib/server/database/db";
-import {and, eq, inArray, sql} from "drizzle-orm";
+import {and, eq, inArray, isNull, sql} from "drizzle-orm";
 import type {RssRefreshProgress} from "@/lib/types/rss-refresh";
 import {cleanHtmlWithRegex, findMatchingKeywordIds, parseRssFeed, RssFetchError, RssItem} from "@/lib/utils/rss-parser";
 import {article, keyword, rssFeed, user, userArticle, userArticleKeyword, userRssFeed} from "@/lib/server/database/schema";
@@ -183,11 +183,16 @@ export async function fetchAndFilterArticles(targetUserId?: number, onProgress?:
     onProgress?.({ phase: "saving", completed, total: feeds.length, failed: result.failedFeeds.length });
 
     const allLinks = new Set<string>();
+    const authorsByLink = new Map<string, string>();
+
     for (const { parsed } of parsedById.values()) {
         for (const item of parsed) {
-            if (item.link) allLinks.add(item.link);
+            if (!item.link) continue;
+            allLinks.add(item.link);
+            if (item.authors) authorsByLink.set(item.link, item.authors);
         }
     }
+
     const linkList = Array.from(allLinks);
     const existingArticles = linkList.length ?
         await db
@@ -201,6 +206,18 @@ export async function fetchAndFilterArticles(targetUserId?: number, onProgress?:
     for (const a of existingArticles) {
         linkToArticleId.set(a.link, a.id);
     }
+
+    db.transaction((tx) => {
+        for (const a of existingArticles) {
+            const authors = authorsByLink.get(a.link);
+            if (!authors || a.authors !== null) continue;
+
+            tx.update(article)
+                .set({ authors })
+                .where(and(eq(article.id, a.id), isNull(article.authors)))
+                .run();
+        }
+    });
 
     const existingUserArticles = await db
         .select()
@@ -223,8 +240,8 @@ export async function fetchAndFilterArticles(targetUserId?: number, onProgress?:
         const pendingUA: UAItem[] = [];
         const linkToMatchedKeywordIds = new Map<string, Set<number>>();
 
+        const pendingArticles: (typeof article.$inferInsert)[] = [];
         const userArticleSet = userToArticleSet.get(user.id) ?? new Set<number>();
-        const pendingArticles: { rssFeedId: number; title: string; link: string; summary: string }[] = [];
 
         for (const feedId of feedIds) {
             const bundle = parsedById.get(feedId);
@@ -247,6 +264,7 @@ export async function fetchAndFilterArticles(targetUserId?: number, onProgress?:
                         link: item.link,
                         title: item.title,
                         rssFeedId: feed.id,
+                        authors: authorsByLink.get(item.link),
                         summary: cleanHtmlWithRegex(item.description ?? ""),
                     });
                 }

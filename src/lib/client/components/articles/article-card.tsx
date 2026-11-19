@@ -108,14 +108,19 @@ export const ArticleCard = (props: ArticleCardProps) => {
                             {article.title}
                         </a>
                     </h2>
+                    {article.authors &&
+                        <p className="mt-1 text-sm text-foreground-muted">
+                            {article.authors}
+                        </p>
+                    }
                 </div>
 
                 <a
                     target="_blank"
                     title="Open article"
                     rel="noopener noreferrer"
-                    href={isEditing ? undefined : article.link}
                     onClick={(ev) => ev.stopPropagation()}
+                    href={isEditing ? undefined : article.link}
                     aria-label={`Open article in a new tab: ${article.title}`}
                     className={cn(
                         "mt-1 shrink-0 rounded-md p-1 text-foreground-muted transition-colors hover:bg-surface-hover hover:text-foreground sm:mt-11",

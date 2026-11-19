@@ -40,6 +40,7 @@ type SafeRssRequestOptions = {
 export type RssItem = {
     link: string | null;
     title: string | null;
+    authors: string | null;
     description: string | null;
 };
 
@@ -407,14 +408,22 @@ export function parseRssXml(xml: string): RssItem[] {
         const link = extractLink(item);
         const description = extractDescription(item);
 
-        return { title, link, description };
+        const authorField = item["dc:creator"] ?? item["dcterms:creator"] ?? item.author;
+        const authorEntries = Array.isArray(authorField) ? authorField : [authorField];
+
+        const authors = authorEntries
+            .map((author) => toStringOrNull(author?.name ?? author)?.trim())
+            .map((name) => name?.replace(/^\S+@[^\s()]+\s*\((.+)\)$/, "$1").trim())
+            .filter((name) => name && !/^\S+@\S+$/.test(name));
+
+        return { title, link, description, authors: authors.join(", ") || null };
     });
 
     return result;
 }
 
 
-export function findMatchingKeywordIds(keywords: { id: number; name: string }[], rssItem: RssItem) {
+export function findMatchingKeywordIds(keywords: { id: number; name: string }[], rssItem: Pick<RssItem, "title" | "description">) {
     const content = `${rssItem.title ?? ""}\n${rssItem.description ?? ""}`.toLowerCase();
 
     return keywords

@@ -20,20 +20,23 @@ describe("RSS and Atom parsing", () => {
                     <link rel="self" href="https://example.com/atom/1"/>
                     <link rel="alternate" href="https://example.com/articles/1"/>
                     <summary>Article summary</summary>
+                    <author><name>Jane Doe</name></author>
+                    <author><name>John Smith</name></author>
                 </entry>
             </feed>
         `;
 
         expect(parseRssXml(xml)).toEqual([{
             title: "Atom article",
-            link: "https://example.com/articles/1",
             description: "Article summary",
+            authors: "Jane Doe, John Smith",
+            link: "https://example.com/articles/1",
         }]);
     });
 
     test("extracts articles from Nature RSS 1.0 RDF feeds", () => {
         const xml = `
-            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/">
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns="http://purl.org/rss/1.0/" xmlns:dc="http://purl.org/dc/elements/1.1/">
                 <channel rdf:about="https://www.nature.com/nphys.rss">
                     <title>Nature Physics</title>
                 </channel>
@@ -41,6 +44,8 @@ describe("RSS and Atom parsing", () => {
                     <title>Physics article</title>
                     <link>https://www.nature.com/articles/example</link>
                     <description>Article summary</description>
+                    <dc:creator>Jane Doe</dc:creator>
+                    <dc:creator>John Smith</dc:creator>
                 </item>
             </rdf:RDF>
         `;
@@ -49,10 +54,11 @@ describe("RSS and Atom parsing", () => {
             title: "Physics article",
             link: "https://www.nature.com/articles/example",
             description: "Article summary",
+            authors: "Jane Doe, John Smith",
         }]);
     });
 
-    test("continues to extract text links from RSS items", () => {
+    test("extracts text links and author names from RSS items", () => {
         const xml = `
             <rss version="2.0">
                 <channel>
@@ -60,12 +66,21 @@ describe("RSS and Atom parsing", () => {
                         <title>RSS article</title>
                         <link>https://example.com/articles/2</link>
                         <description>Article summary</description>
+                        <author>jane@example.com (Jane Doe)</author>
+                        <author>editor@example.com</author>
+                    </item>
+                    <item>
+                        <title>Article without authors</title>
+                        <link>https://example.com/articles/3</link>
                     </item>
                 </channel>
             </rss>
         `;
 
-        expect(parseRssXml(xml)[0]?.link).toBe("https://example.com/articles/2");
+        const [withAuthor, withoutAuthor] = parseRssXml(xml);
+        expect(withAuthor?.link).toBe("https://example.com/articles/2");
+        expect(withAuthor?.authors).toBe("Jane Doe");
+        expect(withoutAuthor?.authors).toBeNull();
     });
 });
 

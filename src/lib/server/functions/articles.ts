@@ -69,6 +69,7 @@ export const getUserArticles = createServerFn({ method: "GET" })
                 link: article.link,
                 title: article.title,
                 summary: article.summary,
+                authors: article.authors,
                 journal: rssFeed.journal,
                 publisher: rssFeed.publisher,
                 ...getTableColumns(userArticle),

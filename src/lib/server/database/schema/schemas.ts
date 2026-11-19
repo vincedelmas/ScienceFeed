@@ -30,6 +30,7 @@ export const keyword = sqliteTable("keyword", {
 export const article = sqliteTable("article", {
     id: integer().primaryKey({ autoIncrement: true }).notNull(),
     rssFeedId: integer("rss_feed_id").references(() => rssFeed.id),
+    authors: text(),
     link: text().notNull(),
     title: text().notNull(),
     summary: text().notNull(),
