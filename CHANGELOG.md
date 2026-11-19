@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/vincedelmas/ScienceFeed/compare/v1.4.0...v1.4.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* correct keyword confirmation dialog spacing ([352706a](https://github.com/vincedelmas/ScienceFeed/commit/352706a2b4dcb28d8a9c646bea7871094b35bf3c))
+
 ## [1.4.0](https://github.com/vincedelmas/ScienceFeed/compare/v1.3.1...v1.4.0) (2026-11-19)
 
 
