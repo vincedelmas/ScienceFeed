@@ -1,38 +1,60 @@
-import {useState} from "react";
+import {useEffect, useRef, useState} from "react";
+import {useLocation, useRouter} from "@tanstack/react-router";
 import type {UserArticlesSearch} from "@/lib/schemas/schemas";
-import {useDebounceCallback} from "@/lib/client/hooks/use-debounce";
 
 
-export function useArticleFilters(filters: UserArticlesSearch, onSearchChange: (params: UserArticlesSearch) => Promise<void>) {
-    const [searchQuery, setSearchQuery] = useState(filters.search ?? "");
-    const [activeKeywordIds, setActiveKeywordIds] = useState(filters.keywordsIds ?? []);
+export type UpdateArticleSearch = (update: (current: UserArticlesSearch) => UserArticlesSearch) => Promise<void>;
 
-    const clearSearch = async () => {
-        setSearchQuery("");
-        await onSearchChange({ search: "", page: 1, keywordsIds: activeKeywordIds });
+
+export function useArticleFilters(filters: UserArticlesSearch, onSearchChange: UpdateArticleSearch) {
+    const router = useRouter();
+    const location = useLocation({ structuralSharing: false });
+    const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+    const [draft, setDraft] = useState<{ location: typeof location; query: string }>();
+
+    const appliedQuery = filters.search ?? "";
+    const draftQuery = draft?.location === location ? draft.query : undefined;
+
+    useEffect(() => () => clearTimeout(timer.current), [location]);
+
+    const setSearchQuery = (query: string) => {
+        setDraft({ location, query });
+        clearTimeout(timer.current);
+        if (query === appliedQuery) return;
+
+        timer.current = setTimeout(() => {
+            // History may have moved while next route's loader is pending
+            if (router.history.location.state.__TSR_key !== location.state.__TSR_key) return;
+            void onSearchChange((current) => ({ ...current, search: query, page: 1 }));
+        }, 350);
     };
 
-    const toggleKeyword = async (keywordId: number) => {
-        const toggleId = (ids: number[]) => ids.includes(keywordId)
-            ? ids.filter((id) => id !== keywordId)
-            : [...ids, keywordId];
-
-        setActiveKeywordIds(toggleId);
-        await onSearchChange({ ...filters, page: 1, keywordsIds: toggleId(filters.keywordsIds ?? []) });
+    const clearSearch = () => {
+        clearTimeout(timer.current);
+        setDraft({ location, query: "" });
+        return onSearchChange((current) => ({ ...current, search: "", page: 1 }));
     };
 
-    useDebounceCallback<UserArticlesSearch>(searchQuery, 350, onSearchChange, {
-        ...filters,
-        page: 1,
-        search: searchQuery,
-        keywordsIds: activeKeywordIds,
-    });
+    const toggleKeyword = (keywordId: number) => {
+        clearTimeout(timer.current);
+        return onSearchChange((current) => {
+            const keywordIds = current.keywordsIds ?? [];
+            return {
+                ...current,
+                page: 1,
+                search: draftQuery ?? current.search,
+                keywordsIds: keywordIds.includes(keywordId)
+                    ? keywordIds.filter((id) => id !== keywordId)
+                    : [...keywordIds, keywordId],
+            };
+        });
+    };
 
     return {
-        searchQuery,
         clearSearch,
         toggleKeyword,
         setSearchQuery,
-        activeKeywordIds,
+        searchQuery: draftQuery ?? appliedQuery,
+        activeKeywordIds: filters.keywordsIds ?? [],
     };
 }

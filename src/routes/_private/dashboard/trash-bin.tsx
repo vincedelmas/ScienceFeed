@@ -1,17 +1,21 @@
-import {navigation} from "@/lib/client/components/dashboard/navigation";
 import {createFileRoute} from "@tanstack/react-router";
-import {userDeletedOptions} from "@/lib/client/react-query";
 import {userArticlesSearchSchema} from "@/lib/schemas/schemas";
+import {userArticleListOptions} from "@/lib/client/react-query";
+import {navigation} from "@/lib/client/components/dashboard/navigation";
 import {ArticleDashboard} from "@/lib/client/components/articles/article-dashboard";
 
 
 export const Route = createFileRoute("/_private/dashboard/trash-bin")({
-    staticData: {navigation: navigation.trash},
     validateSearch: userArticlesSearchSchema,
     loaderDeps: ({ search }) => ({ search }),
-    loader: ({ context: { queryClient }, deps: { search } }) => {
-        return queryClient.query({ ...userDeletedOptions(search), staleTime: "static" });
+    context: ({ deps: { search } }) => ({
+        articleQueryOptions: userArticleListOptions("deleted", search),
+    }),
+    loader: ({ context: { queryClient, articleQueryOptions } }) => {
+        return queryClient.query({ ...articleQueryOptions, staleTime: "static" });
     },
+    staticData: { navigation: navigation.trash },
+    head: () => ({ meta: [{ title: `${navigation.trash.title} - ScienceFeed` }] }),
     component: TrashBinPage,
 });
 
@@ -19,13 +23,15 @@ export const Route = createFileRoute("/_private/dashboard/trash-bin")({
 function TrashBinPage() {
     const filters = Route.useSearch();
     const navigate = Route.useNavigate();
+    const { articleQueryOptions } = Route.useRouteContext();
 
     return (
         <ArticleDashboard
             mode="deleted"
-            title="Trash Bin"
             filters={filters}
+            title={navigation.trash.title}
             subtitle="Articles you have removed"
+            articleQueryOptions={articleQueryOptions}
             onSearchChange={(search) => navigate({ search })}
         />
     );

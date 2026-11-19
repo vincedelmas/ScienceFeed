@@ -54,7 +54,7 @@ export const GeneralForm = () => {
                         )}
                     />
                 </div>
-                <Button className="mt-6" disabled={generalFormMutation.isPending}>
+                <Button type="submit" className="mt-6" disabled={generalFormMutation.isPending}>
                     Update
                 </Button>
             </form>

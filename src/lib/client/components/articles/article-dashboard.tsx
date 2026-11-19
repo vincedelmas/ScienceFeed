@@ -4,12 +4,11 @@ import {Toggle} from "@base-ui/react/toggle";
 import {Columns2, Square} from "lucide-react";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {ToggleGroup} from "@base-ui/react/toggle-group";
-import {PageTitle} from "@/lib/client/components/page-title";
 import {Pagination} from "@/lib/client/components/pagination";
-import {userArticleListOptions} from "@/lib/client/react-query";
+import {PageHeader} from "@/lib/client/components/page-header";
 import {useRssFetcher} from "@/lib/client/react-query/mutations";
 import {buttonVariants} from "@/lib/client/components/ui/button";
-import {useArticleFilters} from "@/lib/client/hooks/use-article-filters";
+import type {userArticleListOptions} from "@/lib/client/react-query";
 import {OptionsMenu} from "@/lib/client/components/articles/options-menu";
 import {InputSearch} from "@/lib/client/components/articles/input-search";
 import {ArticleCard} from "@/lib/client/components/articles/article-card";
@@ -18,6 +17,7 @@ import {EditionButtons} from "@/lib/client/components/articles/edition-buttons";
 import type {UserArticlesSearch, UserArticleStatus} from "@/lib/schemas/schemas";
 import {useArticleBulkActions} from "@/lib/client/hooks/use-article-bulk-actions";
 import {RssRefreshStatus} from "@/lib/client/components/articles/rss-refresh-status";
+import {type UpdateArticleSearch, useArticleFilters} from "@/lib/client/hooks/use-article-filters";
 
 
 interface ArticleDashboardProps {
@@ -25,7 +25,8 @@ interface ArticleDashboardProps {
     subtitle: string;
     mode: UserArticleStatus;
     filters: UserArticlesSearch;
-    onSearchChange: (params: UserArticlesSearch) => Promise<void>;
+    onSearchChange: UpdateArticleSearch;
+    articleQueryOptions: ReturnType<typeof userArticleListOptions>;
 }
 
 
@@ -37,11 +38,11 @@ const columnToggleClassName = buttonVariants({
 });
 
 
-export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChange }: ArticleDashboardProps) {
+export function ArticleDashboard({ mode, title, subtitle, filters, articleQueryOptions, onSearchChange }: ArticleDashboardProps) {
     const config = modeConfig[mode];
     const rssFetcherMutation = useRssFetcher();
     const [columns, setColumns] = useState<"1" | "2">("2");
-    const { articles, keywords, pagination } = useSuspenseQuery(userArticleListOptions(mode, filters)).data;
+    const { articles, keywords, pagination } = useSuspenseQuery(articleQueryOptions).data;
     const { searchQuery, setSearchQuery, activeKeywordIds, clearSearch, toggleKeyword } = useArticleFilters(filters, onSearchChange);
 
     const {
@@ -57,7 +58,7 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
 
     const onPageChange = async (newPage: number) => {
         clearSelection();
-        await onSearchChange({ ...filters, page: newPage });
+        await onSearchChange((current) => ({ ...current, page: newPage }));
     };
 
     const onRssFetcherClick = () => {
@@ -72,7 +73,7 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
     };
 
     return (
-        <PageTitle title={title} count={pagination.total} subtitle={subtitle}>
+        <PageHeader title={title} count={pagination.total} subtitle={subtitle}>
             <div>
                 <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <InputSearch
@@ -113,7 +114,10 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
                 </div>
 
                 <RssRefreshStatus
-                    progress={rssFetcherMutation.isPending ? rssFetcherMutation.progress : null}
+                    progress={rssFetcherMutation.isPending
+                        ? rssFetcherMutation.progress
+                        : null
+                    }
                 />
 
                 <div className="mt-3 grid items-center gap-x-4 gap-y-2 sm:grid-cols-2">
@@ -171,7 +175,7 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
                     />
                 </div>
             </div>
-        </PageTitle>
+        </PageHeader>
     );
 }
 

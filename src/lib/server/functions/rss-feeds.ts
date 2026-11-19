@@ -24,8 +24,7 @@ export const getUserRssFeeds = createServerFn({ method: "GET" })
                 rssFeedId: userRssFeed.rssFeedId,
                 lastFetchDate: rssFeed.lastFetchDate,
                 lastFetchError: rssFeed.lastFetchError,
-            })
-            .from(userRssFeed)
+            }).from(userRssFeed)
             .innerJoin(rssFeed, eq(userRssFeed.rssFeedId, rssFeed.id))
             .where(eq(userRssFeed.userId, currentUser.id));
 
@@ -40,9 +39,12 @@ export const rssFeedSearch = createServerFn({ method: "GET" })
         const rssSearchResults = await db
             .select()
             .from(rssFeed)
-            .where(or(like(rssFeed.publisher, `%${query}%`), like(rssFeed.journal, `%${query}%`)))
+            .where(or(
+                like(rssFeed.journal, `%${query}%`),
+                like(rssFeed.publisher, `%${query}%`),
+            ));
 
-        if (!rssSearchResults) {
+        if (rssSearchResults.length === 0) {
             return [];
         }
 
@@ -51,10 +53,10 @@ export const rssFeedSearch = createServerFn({ method: "GET" })
             .from(userRssFeed)
             .where(and(
                 eq(userRssFeed.userId, currentUser.id),
-                inArray(userRssFeed.rssFeedId, rssSearchResults.map((feed) => feed.id))
-            ))
+                inArray(userRssFeed.rssFeedId, rssSearchResults.map((feed) => feed.id)),
+            ));
 
-        const activeFeedIds = new Set(userActiveFeeds.map(feed => feed.rssFeedId))
+        const activeFeedIds = new Set(userActiveFeeds.map((feed) => feed.rssFeedId));
 
         return rssSearchResults.map((result) => ({
             ...result,
@@ -83,15 +85,14 @@ export const createRssFeed = createServerFn({ method: "POST" })
                 url,
                 journal,
                 publisher,
-            })
-            .returning({ id: rssFeed.id })
+            }).returning({ id: rssFeed.id });
 
         await db
             .insert(userRssFeed)
             .values({
                 rssFeedId: newFeed.id,
                 userId: currentUser.id,
-            })
+            });
     })
 
 
@@ -102,16 +103,20 @@ export const addRssFeedsToUser = createServerFn({ method: "POST" })
         const existingUserFeeds = await db
             .select({ rssFeedId: userRssFeed.rssFeedId })
             .from(userRssFeed)
-            .where(and(eq(userRssFeed.userId, currentUser.id), inArray(userRssFeed.rssFeedId, feedsIds)))
+            .where(and(eq(userRssFeed.userId, currentUser.id), inArray(userRssFeed.rssFeedId, feedsIds)));
 
-        const existingFeedIds = new Set(existingUserFeeds.map((feed) => feed.rssFeedId))
-        const newFeedIds = feedsIds.filter((id) => !existingFeedIds.has(id))
+        const existingFeedIds = new Set(existingUserFeeds.map((feed) => feed.rssFeedId));
+        const newFeedIds = feedsIds.filter((id) => !existingFeedIds.has(id));
 
         if (newFeedIds.length > 0) {
-            const userFeedEntries = newFeedIds.map((feedId) => ({ rssFeedId: feedId, userId: currentUser.id }))
+            const userFeedEntries = newFeedIds.map((feedId) => ({
+                rssFeedId: feedId,
+                userId: currentUser.id,
+            }));
+
             await db
                 .insert(userRssFeed)
-                .values(userFeedEntries)
+                .values(userFeedEntries);
         }
     })
 
@@ -122,7 +127,7 @@ export const removeRssFeedsFromUser = createServerFn({ method: "POST" })
     .handler(async ({ data: { rssIds }, context: { currentUser } }) => {
         await db
             .delete(userRssFeed)
-            .where(and(eq(userRssFeed.userId, currentUser.id), inArray(userRssFeed.rssFeedId, rssIds)))
+            .where(and(eq(userRssFeed.userId, currentUser.id), inArray(userRssFeed.rssFeedId, rssIds)));
     })
 
 
@@ -134,7 +139,7 @@ export const fetchUserRssFeeds = createServerFn({ method: "POST" })
         const activeKeywords = await db
             .select({ name: keyword.name })
             .from(keyword)
-            .where(and(eq(keyword.userId, currentUser.id), eq(keyword.active, true)))
+            .where(and(eq(keyword.userId, currentUser.id), eq(keyword.active, true)));
 
         if (activeKeywords.length === 0) {
             return { warn: "At least one active keyword is required to fetch articles" }
@@ -148,8 +153,7 @@ export const fetchUserRssFeeds = createServerFn({ method: "POST" })
                 RSS_REFRESH_COOLDOWN_ENABLED
                     ? or(isNull(user.lastRssUpdate), lte(user.lastRssUpdate, sql`datetime('now', ${`-${RSS_REFRESH_COOLDOWN_MINUTES} minutes`})`))
                     : undefined,
-            ))
-            .returning({ lastRssUpdate: user.lastRssUpdate });
+            )).returning({ lastRssUpdate: user.lastRssUpdate });
 
         if (acquiredCooldown.length === 0) {
             const storedUser = db

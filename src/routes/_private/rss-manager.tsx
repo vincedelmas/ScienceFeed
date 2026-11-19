@@ -1,18 +1,19 @@
-import {navigation} from "@/lib/client/components/dashboard/navigation";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {rssManagerOptions} from "@/lib/client/react-query";
-import {PageTitle} from "@/lib/client/components/page-title";
+import {PageHeader} from "@/lib/client/components/page-header";
+import {navigation} from "@/lib/client/components/dashboard/navigation";
 import {DisplayFeeds} from "@/lib/client/components/rss-manager/display-feeds";
 import {SearchRSSFeeds} from "@/lib/client/components/rss-manager/search-feeds";
 import {CreateNewRSSFeed} from "@/lib/client/components/rss-manager/create-feed";
 
 
 export const Route = createFileRoute("/_private/rss-manager")({
-    staticData: {navigation: navigation.feeds},
     loader: ({ context: { queryClient } }) => {
         return queryClient.query({ ...rssManagerOptions, staleTime: "static" });
     },
+    staticData: { navigation: navigation.feeds },
+    head: () => ({ meta: [{ title: "RSS Feeds Manager - ScienceFeed" }] }),
     component: RssManager,
 });
 
@@ -22,7 +23,7 @@ function RssManager() {
     const publisherCount = new Set(userRssFeeds.map((feed) => feed.publisher)).size;
 
     return (
-        <PageTitle title="RSS Feeds Manager" subtitle="Search and Manage your RSS feeds.">
+        <PageHeader title="RSS Feeds Manager" subtitle="Search and Manage your RSS feeds.">
             <div className="mt-3">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-baseline sm:justify-between">
                     <SearchRSSFeeds/>
@@ -40,6 +41,6 @@ function RssManager() {
             <DisplayFeeds
                 userRssFeeds={userRssFeeds}
             />
-        </PageTitle>
+        </PageHeader>
     );
 }

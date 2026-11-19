@@ -19,21 +19,6 @@ export const userArticleListOptions = (status: UserArticleStatus, search: UserAr
 });
 
 
-export const userArticlesOptions = (search: UserArticlesSearch) => {
-    return userArticleListOptions("active", search);
-}
-
-
-export const userArchivedOptions = (search: UserArticlesSearch) => {
-    return userArticleListOptions("archived", search);
-}
-
-
-export const userDeletedOptions = (search: UserArticlesSearch) => {
-    return userArticleListOptions("deleted", search);
-}
-
-
 export const userKeywordsOptions = queryOptions({
     queryKey: ["keywords"] as const,
     queryFn: () => getUserKeywords(),

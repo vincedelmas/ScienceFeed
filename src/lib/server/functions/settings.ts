@@ -15,6 +15,5 @@ export const postGeneralSettings = createServerFn({ method: "POST" })
             .set({
                 name: data.name,
                 updatedAt: new Date(),
-            })
-            .where(eq(user.id, currentUser.id))
+            }).where(eq(user.id, currentUser.id));
     })

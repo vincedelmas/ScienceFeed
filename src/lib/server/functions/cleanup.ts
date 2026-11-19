@@ -10,9 +10,11 @@ export async function cleanupDeletedArticles(retentionDays = 180) {
         .delete(userArticle)
         .where(and(
             eq(userArticle.isDeleted, true),
-            lt(sql`coalesce(${userArticle.markedAsDeletedDate}, ${userArticle.addedDate})`, sql`datetime('now', ${`-${safeRetentionDays} days`})`),
-        ))
-        .returning({ id: userArticle.id });
+            lt(
+                sql`coalesce(${userArticle.markedAsDeletedDate}, ${userArticle.addedDate})`,
+                sql`datetime('now', ${`-${safeRetentionDays} days`})`,
+            ),
+        )).returning({ id: userArticle.id });
 
     const deletedArticles = await db
         .delete(article)
@@ -20,8 +22,7 @@ export async function cleanupDeletedArticles(retentionDays = 180) {
             select 1
             from ${userArticle}
             where ${userArticle.articleId} = ${article.id}
-        )`)
-        .returning({ id: article.id });
+        )`).returning({ id: article.id });
 
     return {
         retentionDays: safeRetentionDays,

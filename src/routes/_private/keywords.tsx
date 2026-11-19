@@ -1,25 +1,36 @@
-import {navigation} from "@/lib/client/components/dashboard/navigation";
 import {useState} from "react";
 import {cn} from "@/lib/utils/classnames";
-import {UserKeyword} from "@/lib/types/types";
+import type {UserKeyword} from "@/lib/types/types";
 import {toast} from "@/lib/client/components/ui/toast";
 import {Input} from "@/lib/client/components/ui/input";
 import {createFileRoute} from "@tanstack/react-router";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {Button} from "@/lib/client/components/ui/button";
-import {PageTitle} from "@/lib/client/components/page-title";
 import {userKeywordsOptions} from "@/lib/client/react-query";
+import {PageHeader} from "@/lib/client/components/page-header";
+import {navigation} from "@/lib/client/components/dashboard/navigation";
 import {Loader2, PauseCircle, PlayCircle, Plus, Tags, Trash2} from "lucide-react";
 import {useAddKeywordMutation, useDeleteKeywordMutation, useToggleKeywordMutation} from "@/lib/client/react-query/mutations";
-import {AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle} from "@/lib/client/components/ui/alert-dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogMedia,
+    AlertDialogTitle,
+} from "@/lib/client/components/ui/alert-dialog";
 
 
 export const Route = createFileRoute("/_private/keywords")({
-    staticData: {navigation: navigation.keywords},
-    component: KeywordManagerPage,
     loader: ({ context: { queryClient } }) => {
         return queryClient.query({ ...userKeywordsOptions, staleTime: "static" });
     },
+    staticData: { navigation: navigation.keywords },
+    head: () => ({ meta: [{ title: "Keyword Manager - ScienceFeed" }] }),
+    component: KeywordManagerPage,
 });
 
 
@@ -30,6 +41,7 @@ function KeywordManagerPage() {
     const [newKeyword, setNewKeyword] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
     const userKeywords = useSuspenseQuery(userKeywordsOptions).data;
+
     const [pendingToggleKeywordId, setPendingToggleKeywordId] = useState<number | null>(null);
     const [pendingDeleteKeywordId, setPendingDeleteKeywordId] = useState<number | null>(null);
     const [pendingConfirmation, setPendingConfirmation] = useState<KeywordAction | null>(null);
@@ -40,8 +52,8 @@ function KeywordManagerPage() {
     });
 
     const activeCount = userKeywords.filter((keyword) => keyword.active).length;
-    const inactiveCount = userKeywords.length - activeCount;
 
+    const inactiveCount = userKeywords.length - activeCount;
     const totalLinkedArticles = userKeywords.reduce((total, keyword) => total + Number(keyword.totalArticles ?? 0), 0);
 
     const trimmedKeyword = newKeyword.trim();
@@ -72,13 +84,11 @@ function KeywordManagerPage() {
 
     const handleDeleteKeyword = (keyword: UserKeyword) => {
         if (pendingDeleteKeywordId !== null || pendingToggleKeywordId !== null) return;
-
         setPendingConfirmation({ type: "delete", keyword });
     };
 
     const handleToggleKeyword = (keyword: UserKeyword) => {
         if (pendingToggleKeywordId !== null || pendingDeleteKeywordId !== null) return;
-
         setPendingConfirmation({ type: "toggle", keyword });
     };
 
@@ -115,7 +125,7 @@ function KeywordManagerPage() {
     };
 
     return (
-        <PageTitle title="Keyword Manager" subtitle="Manage your RSS keywords.">
+        <PageHeader title="Keyword Manager" subtitle="Manage your RSS keywords.">
             <div className="mt-3">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                     <div className="w-full sm:w-100 sm:max-w-full">
@@ -217,9 +227,15 @@ function KeywordManagerPage() {
                                                 </span>
                                             </div>
                                             <div className="mt-1 flex flex-wrap gap-2 text-xs text-foreground-subtle">
-                                                <span>{formatCount(keyword.totalArticles)} total</span>
-                                                <span>{formatCount(keyword.archivedArticles)} archived</span>
-                                                <span>{formatCount(keyword.deletedArticles)} deleted</span>
+                                                <span>
+                                                    {formatCount(keyword.totalArticles)} total
+                                                </span>
+                                                <span>
+                                                    {formatCount(keyword.archivedArticles)} archived
+                                                </span>
+                                                <span>
+                                                    {formatCount(keyword.deletedArticles)} deleted
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -230,7 +246,8 @@ function KeywordManagerPage() {
                                             disabled={isActionLocked}
                                             onClick={() => handleToggleKeyword(keyword)}
                                             title={keyword.active ? "Pause keyword" : "Activate keyword"}
-                                            className="h-8 w-full border border-border-strong bg-transparent px-3 text-foreground-soft hover:bg-surface-hover hover:text-foreground sm:w-auto"
+                                            className="h-8 w-full border border-border-strong bg-transparent px-3 text-foreground-soft
+                                            hover:bg-surface-hover hover:text-foreground sm:w-auto"
                                         >
                                             {isToggling ?
                                                 <Loader2 className="size-4 animate-spin"/>
@@ -244,8 +261,8 @@ function KeywordManagerPage() {
                                             size="icon"
                                             variant="ghost"
                                             title="Delete keyword"
-                                            aria-label={`Delete keyword: ${keyword.name}`}
                                             disabled={isActionLocked}
+                                            aria-label={`Delete keyword: ${keyword.name}`}
                                             onClick={() => handleDeleteKeyword(keyword)}
                                             className="h-8 w-full text-foreground-muted hover:bg-danger-muted hover:text-danger-foreground sm:size-8"
                                         >
@@ -267,7 +284,7 @@ function KeywordManagerPage() {
                 onConfirm={handleConfirmAction}
                 onCancel={() => setPendingConfirmation(null)}
             />
-        </PageTitle>
+        </PageHeader>
     );
 }
 

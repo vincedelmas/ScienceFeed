@@ -18,11 +18,12 @@ export const getUserKeywords = createServerFn({ method: "GET" })
                 readArticles: sum(userArticle.isRead),
                 deletedArticles: sum(userArticle.isDeleted),
                 archivedArticles: sum(userArticle.isArchived),
-            })
-            .from(keyword)
+            }).from(keyword)
             .leftJoin(userArticleKeyword, eq(keyword.id, userArticleKeyword.keywordId))
-            .leftJoin(userArticle, and(eq(userArticleKeyword.userArticleId, userArticle.id), eq(userArticle.userId, currentUser.id)))
-            .where(eq(keyword.userId, currentUser.id))
+            .leftJoin(userArticle, and(
+                eq(userArticle.userId, currentUser.id),
+                eq(userArticleKeyword.userArticleId, userArticle.id),
+            )).where(eq(keyword.userId, currentUser.id))
             .groupBy(keyword.id, keyword.name);
 
         return userKeywords;
@@ -48,7 +49,7 @@ export const addUserKeyword = createServerFn({ method: "POST" })
             .values({
                 name: name,
                 userId: currentUser.id,
-            })
+            });
     })
 
 
@@ -59,7 +60,7 @@ export const toggleUserKeyword = createServerFn({ method: "POST" })
         await db
             .update(keyword)
             .set({ active: data.active })
-            .where(and(eq(keyword.id, data.keywordId), eq(keyword.userId, currentUser.id)))
+            .where(and(eq(keyword.id, data.keywordId), eq(keyword.userId, currentUser.id)));
     })
 
 
@@ -69,5 +70,5 @@ export const deleteUserKeyword = createServerFn({ method: "POST" })
     .handler(async ({ data, context: { currentUser } }) => {
         await db
             .delete(keyword)
-            .where(and(eq(keyword.id, data.keywordId), eq(keyword.userId, currentUser.id)))
+            .where(and(eq(keyword.id, data.keywordId), eq(keyword.userId, currentUser.id)));
     })

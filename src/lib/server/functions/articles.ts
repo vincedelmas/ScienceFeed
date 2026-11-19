@@ -101,8 +101,7 @@ export const getUserArticles = createServerFn({ method: "GET" })
                 eq(keyword.userId, currentUser.id),
                 eq(userArticle.userId, currentUser.id),
                 ...getStatusConditions(status),
-            ))
-            .groupBy(keyword.id);
+            )).groupBy(keyword.id);
 
         return {
             articles: articleRows,
@@ -126,8 +125,10 @@ export const archiveArticles = createServerFn({ method: "POST" })
             .set({
                 isArchived: archive,
                 markedAsArchivedDate: archive ? sql`(CURRENT_TIMESTAMP)` : null,
-            })
-            .where(and(eq(userArticle.userId, currentUser.id), inArray(userArticle.id, articleIds)))
+            }).where(and(
+                inArray(userArticle.id, articleIds),
+                eq(userArticle.userId, currentUser.id),
+            ));
     });
 
 
@@ -140,6 +141,8 @@ export const deleteArticles = createServerFn({ method: "POST" })
             .set({
                 isDeleted,
                 markedAsDeletedDate: isDeleted ? sql`(CURRENT_TIMESTAMP)` : null,
-            })
-            .where(and(eq(userArticle.userId, currentUser.id), inArray(userArticle.id, articleIds)))
+            }).where(and(
+                inArray(userArticle.id, articleIds),
+                eq(userArticle.userId, currentUser.id),
+            ));
     });
