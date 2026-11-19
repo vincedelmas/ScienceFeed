@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.4.0](https://github.com/vincedelmas/ScienceFeed/compare/v1.3.1...v1.4.0) (2026-11-19)
+
+
+### Features
+
+* **articles:** refine dashboard layout and improve article previews ([0bcd174](https://github.com/vincedelmas/ScienceFeed/commit/0bcd174e502ef97e1e8638fc764cc96093492935))
+* display authors on article cards ([dc8e8da](https://github.com/vincedelmas/ScienceFeed/commit/dc8e8da2ec5401f498642bf10c9330372a15ab52))
+
+
+### Bug Fixes
+
+* skip RSS refresh cooldown in development ([7017c37](https://github.com/vincedelmas/ScienceFeed/commit/7017c37d5d38b516f7d54d91109e5f448f5b20c6))
+* sort trash items by deletion time ([a556016](https://github.com/vincedelmas/ScienceFeed/commit/a556016bacb9ad63bb6ee1d4ba8f42b6d4ab9bb3))
+
+
+### Code Refactoring
+
+* **articles:** extract dashboard bulk actions ([b17c218](https://github.com/vincedelmas/ScienceFeed/commit/b17c218715d47d2b37d4bc1bd45fdc0469502e7c))
+* **articles:** extract dashboard filters and refresh status ([5fa64ca](https://github.com/vincedelmas/ScienceFeed/commit/5fa64ca9c55b4d82d28bc5799be4c67d4efb431f))
+* **articles:** move titles, queries, and filters into routing ([19e5e75](https://github.com/vincedelmas/ScienceFeed/commit/19e5e7561ac724104232bed70741fbf70ec6c847))
+
 ## [1.3.1](https://github.com/vincedelmas/ScienceFeed/compare/v1.3.0...v1.3.1) (2026-11-09)
 
 
