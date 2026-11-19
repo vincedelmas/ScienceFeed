@@ -2,23 +2,22 @@ import {cn} from "@/lib/utils/classnames";
 import {useEffect, useState} from "react";
 import {Toggle} from "@base-ui/react/toggle";
 import {Columns2, Square} from "lucide-react";
-import {ArticleBulkActions} from "@/lib/types/types";
-import {toast} from "@/lib/client/components/ui/toast";
 import {useSuspenseQuery} from "@tanstack/react-query";
 import {ToggleGroup} from "@base-ui/react/toggle-group";
 import {PageTitle} from "@/lib/client/components/page-title";
 import {Pagination} from "@/lib/client/components/pagination";
-import {buttonVariants} from "@/lib/client/components/ui/button";
 import {userArticleListOptions} from "@/lib/client/react-query";
+import {useRssFetcher} from "@/lib/client/react-query/mutations";
+import {buttonVariants} from "@/lib/client/components/ui/button";
 import {useDebounceCallback} from "@/lib/client/hooks/use-debounce";
 import {OptionsMenu} from "@/lib/client/components/articles/options-menu";
 import {InputSearch} from "@/lib/client/components/articles/input-search";
 import {ArticleCard} from "@/lib/client/components/articles/article-card";
 import {KeywordsBadge} from "@/lib/client/components/articles/keywords-badge";
 import {EditionButtons} from "@/lib/client/components/articles/edition-buttons";
+import {useArticleBulkActions} from "@/lib/client/hooks/use-article-bulk-actions";
 import {Progress, ProgressLabel, ProgressValue} from "@/lib/client/components/ui/progress";
 import {UserArticlesSearch, userArticlesSearchSchema, UserArticleStatus} from "@/lib/schemas/schemas";
-import {useArchiveArticles, useDeleteArticles, useRssFetcher} from "@/lib/client/react-query/mutations";
 
 
 interface ArticleDashboardProps {
@@ -43,20 +42,16 @@ const columnToggleClassName = buttonVariants({
 export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChange }: ArticleDashboardProps) {
     const config = modeConfig[mode];
     const rssFetcherMutation = useRssFetcher();
-    const deleteArticlesMutation = useDeleteArticles();
-    const archiveArticlesMutation = useArchiveArticles();
-    const [isEditing, setIsEditing] = useState(false);
+    const refreshProgress = rssFetcherMutation.progress;
     const [columns, setColumns] = useState<"1" | "2">("2");
     const [searchQuery, setSearchQuery] = useState(filters?.search ?? "");
-    const [selectedArticles, setSelectedArticles] = useState<number[]>([]);
     const [activeKeywordsIds, setActiveKeywordsIds] = useState<number[]>(filters.keywordsIds ?? []);
     const { articles, keywords, pagination } = useSuspenseQuery(userArticleListOptions(mode, filters)).data;
 
-    const refreshProgress = rssFetcherMutation.progress;
-    const visibleArticleIds = articles.map((article) => article.id);
-
-    const visibleArticleIdsKey = visibleArticleIds.join(",");
-    const isBulkActionPending = archiveArticlesMutation.isPending || deleteArticlesMutation.isPending;
+    const {
+        isEditing, selectedArticles, isBulkActionPending, clearSelection, onEditModeClick,
+        onSelectionClick, onBulkActionClick, onCardArchiveClick, onDeleteClick,
+    } = useArticleBulkActions(mode, articles);
 
     useEffect(() => {
         if (localStorage.getItem(ARTICLE_COLUMNS_STORAGE_KEY) === "1") {
@@ -64,56 +59,14 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
         }
     }, []);
 
-    useEffect(() => {
-        setSelectedArticles((prev) => {
-            const visibleIds = new Set(visibleArticleIdsKey.split(",").filter(Boolean).map(Number));
-            const next = prev.filter((articleId) => visibleIds.has(articleId));
-
-            return next.length === prev.length ? prev : next;
-        });
-    }, [visibleArticleIdsKey]);
-
     const onResetClick = async () => {
         setSearchQuery(DEFAULT.search);
         await onSearchChange({ ...DEFAULT, keywordsIds: activeKeywordsIds });
     };
 
     const onPageChange = async (newPage: number) => {
-        setSelectedArticles([]);
+        clearSelection();
         await onSearchChange({ ...filters, page: newPage });
-    };
-
-    const onBulkActionClick = (action: ArticleBulkActions) => {
-        if (action === "select") {
-            setSelectedArticles(visibleArticleIds);
-        }
-        else if (action === "deselect") {
-            setSelectedArticles([]);
-        }
-        else if (action === "archive") {
-            onArchiveClick(selectedArticles, true);
-        }
-        else if (action === "unarchive") {
-            onArchiveClick(selectedArticles, false);
-        }
-        else if (action === "delete") {
-            onDeleteClick(selectedArticles, true);
-        }
-        else if (action === "restore") {
-            onDeleteClick(selectedArticles, false);
-        }
-    };
-
-    const onEditModeClick = () => {
-        setIsEditing(!isEditing);
-        setSelectedArticles([]);
-    };
-
-    const onSelectionClick = (articleId: number) => {
-        setSelectedArticles((prev) => prev.includes(articleId)
-            ? prev.filter((id) => id !== articleId)
-            : [...prev, articleId]
-        );
     };
 
     const onKeywordClick = async (keywordId: number) => {
@@ -130,24 +83,6 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
             keywordsIds: currentKeywordIds.includes(keywordId)
                 ? currentKeywordIds.filter((id) => id !== keywordId)
                 : [...currentKeywordIds, keywordId],
-        });
-    };
-
-    const onArchiveClick = (articleIds: number[], archive = mode === "active") => {
-        setSelectedArticles([]);
-        archiveArticlesMutation.mutate({ data: { articleIds, archive } }, {
-            onError: () => {
-                return toast.add({ type: "error", title: `Failed to ${archive ? "archive" : "unarchive"} the article(s)` });
-            },
-        });
-    };
-
-    const onDeleteClick = (articleIds: number[], isDeleted = true) => {
-        setSelectedArticles([]);
-        deleteArticlesMutation.mutate({ data: { articleIds, isDeleted } }, {
-            onError: () => {
-                return toast.add({ type: "error", title: `Failed to ${isDeleted ? "delete" : "restore"} the article(s)` });
-            },
         });
     };
 
@@ -269,19 +204,12 @@ export function ArticleDashboard({ mode, title, subtitle, filters, onSearchChang
                                 isEditing={isEditing}
                                 compact={columns === "1"}
                                 selected={selectedArticles}
+                                onDeleteClick={onDeleteClick}
                                 archiveIcon={config.archiveIcon}
                                 archiveTitle={config.archiveTitle}
                                 onSelectionClick={onSelectionClick}
+                                onArchiveClick={onCardArchiveClick}
                                 showDeleteAction={config.showDeleteAction}
-                                onDeleteClick={onDeleteClick}
-                                onArchiveClick={(articleIds) => {
-                                    if (mode === "deleted") {
-                                        onDeleteClick(articleIds, false);
-                                    }
-                                    else {
-                                        onArchiveClick(articleIds, mode === "active");
-                                    }
-                                }}
                             />
                         )}
                     </div>
