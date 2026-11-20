@@ -7,6 +7,9 @@ export const serverEnv = createEnv({
         // Database
         DATABASE_URL: z.string().trim().min(1).default("./instance/site.db"),
 
+        // Crossref
+        CROSSREF_MAILTO: z.string().trim().pipe(z.email().or(z.literal(""))).optional(),
+
         // Better-Auth
         BETTER_AUTH_SECRET: z.string().min(20),
 

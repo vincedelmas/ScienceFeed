@@ -1,9 +1,12 @@
 import {Buffer} from "node:buffer";
 import {lookup} from "node:dns/promises";
 import {XMLParser} from "fast-xml-parser";
+import {getArticleDoi} from "@/lib/utils/doi";
 import {request as httpRequest} from "node:http";
 import {request as httpsRequest} from "node:https";
 import {BlockList, isIP, type LookupFunction} from "node:net";
+import {articleTextFromMarkup} from "@/lib/utils/article-text";
+import {parseFeedPublicationDetails} from "@/lib/utils/feed-summary";
 
 
 const RSS_MAX_REDIRECTS = 5;
@@ -38,6 +41,7 @@ type SafeRssRequestOptions = {
 
 
 export type RssItem = {
+    doi: string | null;
     link: string | null;
     title: string | null;
     authors: string | null;
@@ -402,11 +406,16 @@ export function parseRssXml(xml: string): RssItem[] {
         return null;
     };
 
-    const result: RssItem[] = arr.map((item: any) => {
+    return arr.map((item: any) => {
         const title = toStringOrNull(item.title) ?? null;
 
         const link = extractLink(item);
         const description = extractDescription(item);
+
+        const doi = [item["prism:doi"], item.doi, item["dc:identifier"], item["dcterms:identifier"], item["prism:url"], item.guid, item.id]
+            .flat()
+            .map((value) => getArticleDoi(toStringOrNull(value)))
+            .find(Boolean) ?? getArticleDoi(link);
 
         const authorField = item["dc:creator"] ?? item["dcterms:creator"] ?? item.author;
         const authorEntries = Array.isArray(authorField) ? authorField : [authorField];
@@ -414,12 +423,17 @@ export function parseRssXml(xml: string): RssItem[] {
         const authors = authorEntries
             .map((author) => toStringOrNull(author?.name ?? author)?.trim())
             .map((name) => name?.replace(/^\S+@[^\s()]+\s*\((.+)\)$/, "$1").trim())
-            .filter((name) => name && !/^\S+@\S+$/.test(name));
+            .filter((name) => name && !/^\S+@\S+$/.test(name))
+            .join(", ");
 
-        return { title, link, description, authors: authors.join(", ") || null };
+        return {
+            doi,
+            link,
+            title,
+            description,
+            authors: authors || parseFeedPublicationDetails(articleTextFromMarkup(description ?? ""))?.authors || null,
+        };
     });
-
-    return result;
 }
 
 
@@ -429,14 +443,4 @@ export function findMatchingKeywordIds(keywords: { id: number; name: string }[],
     return keywords
         .filter((keyword) => content.includes(keyword.name.toLowerCase()))
         .map((keyword) => keyword.id);
-}
-
-
-export function cleanHtmlWithRegex(html: string): string {
-    return html
-        .replace(/<(script|style)[\s\S]*?>[\s\S]*?<\/\1>/gi, "")
-        .replace(/<\/?(?:blockquote|br|div|h[1-6]|hr|li|p|section|td|th|tr)\b[^>]*>/gi, " ")
-        .replace(/<[^>]*?>/g, "")
-        .replace(/\s+/g, " ")
-        .trim();
 }

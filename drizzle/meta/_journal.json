@@ -43,6 +43,13 @@
       "when": 1795079637278,
       "tag": "0005_article_authors",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1795183987464,
+      "tag": "0006_article_doi",
+      "breakpoints": true
     }
   ]
 }

@@ -3,7 +3,7 @@ export type RssRefreshProgress = {
     failed: number;
     journal?: string;
     completed: number;
-    phase: "fetching" | "saving";
+    phase: "fetching" | "saving" | "enriching";
 };
 
 

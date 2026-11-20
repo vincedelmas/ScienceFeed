@@ -1,6 +1,6 @@
 import {describe, expect, test} from "bun:test";
+import {articleTextFromMarkup} from "./article-text";
 import {
-    cleanHtmlWithRegex,
     fetchSafeRssResponse,
     findMatchingKeywordIds,
     isPublicIpAddress,
@@ -29,6 +29,7 @@ describe("RSS and Atom parsing", () => {
 
         expect(parseRssXml(xml)).toEqual([{
             title: "Atom article",
+            doi: null,
             description: "Article summary",
             authors: "Jane Doe, John Smith",
             link: "https://example.com/articles/1",
@@ -53,6 +54,7 @@ describe("RSS and Atom parsing", () => {
 
         expect(parseRssXml(xml)).toEqual([{
             title: "Physics article",
+            doi: null,
             link: "https://www.nature.com/articles/example",
             description: "Article summary",
             authors: "Jane Doe, John Smith",
@@ -83,6 +85,40 @@ describe("RSS and Atom parsing", () => {
         expect(withAuthor?.authors).toBe("Jane Doe");
         expect(withoutAuthor?.authors).toBeNull();
     });
+
+    test("extracts DOIs from feed metadata and links across publishers", () => {
+        const xml = `
+            <rss xmlns:prism="http://prismstandard.org/namespaces/basic/2.0/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <channel>
+                    <item><link>https://example.com/article/1</link><prism:doi>10.1234/ARTICLE</prism:doi></item>
+                    <item><link>https://example.com/article/2</link><dc:identifier>doi:10.1234/OTHER</dc:identifier></item>
+                    <item><link>https://doi.org/10.1234%2FEXAMPLE?tracking=1</link></item>
+                    <item><link>http://pubs.rsc.org/en/Content/ArticleLanding/2026/SC/D6SC00001J</link></item>
+                    <item><link>https://pubs.rsc.org/sc/article/doi/10.1039/d6sc00002d/12345/Article-title</link></item>
+                    <item><link>https://pubs.acs.org/accacs/article/doi/10.1021/acscatal.6c07504/5472972/Article-title</link></item>
+                    <item><link>https://www.nature.com/articles/d41586-026-03680-1</link></item>
+                    <item><link>https://www.nature.com/articles/s41599-026-07431-5</link></item>
+                    <item><link>https://www.sciencedirect.com/science/article/pii/S0009261426000000</link></item>
+                </channel>
+            </rss>
+        `;
+
+        expect(parseRssXml(xml).map(({ doi }) => doi)).toEqual([
+            "10.1234/article", "10.1234/other", "10.1234/example", "10.1039/d6sc00001j", "10.1039/d6sc00002d",
+            "10.1021/acscatal.6c07504", "10.1038/d41586-026-03680-1", null, null,
+        ]);
+    });
+
+    test("keeps authors provided in a feed's publication summary", () => {
+        const xml = `
+            <rss><channel><item>
+                <title>Article</title>
+                <description><![CDATA[<p>Publication date: 1 March 2027</p><p>Source: Journal</p><p>Author(s): Jane Doe, John Smith</p>]]></description>
+            </item></channel></rss>
+        `;
+
+        expect(parseRssXml(xml)[0]?.authors).toBe("Jane Doe, John Smith");
+    });
 });
 
 
@@ -90,7 +126,13 @@ describe("feed summary formatting", () => {
     test("separates headings and paragraphs while preserving inline text", () => {
         const html = '<img alt="Illustration"/><span class="paragraphSection"><div class="boxTitle">Conspectus</div>Atherosclerosis is a chronic disease.<p>We examine redox-active Fe<sup>2+</sup> probes.</p></span>';
 
-        expect(cleanHtmlWithRegex(html)).toBe("Conspectus Atherosclerosis is a chronic disease. We examine redox-active Fe2+ probes.");
+        expect(articleTextFromMarkup(html)).toBe("Conspectus Atherosclerosis is a chronic disease. We examine redox-active Fe2+ probes.");
+    });
+
+    test("turns Crossref JATS paragraphs and entities into plain text", () => {
+        const abstract = "<jats:p>We examine Fe<jats:sup>2+</jats:sup> &amp; Cu.</jats:p><jats:p>Results show &#x2265; 80% conversion.</jats:p>";
+
+        expect(articleTextFromMarkup(abstract)).toBe("We examine Fe2+ & Cu. Results show ≥ 80% conversion.");
     });
 });
 

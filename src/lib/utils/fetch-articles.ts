@@ -1,8 +1,11 @@
 import pLimit from "p-limit";
 import {db} from "@/lib/server/database/db";
 import {and, eq, inArray, isNull, sql} from "drizzle-orm";
+import {fetchCrossrefMetadata} from "@/lib/utils/crossref";
 import type {RssRefreshProgress} from "@/lib/types/rss-refresh";
-import {cleanHtmlWithRegex, findMatchingKeywordIds, parseRssFeed, RssFetchError, RssItem} from "@/lib/utils/rss-parser";
+import {articleTextFromMarkup} from "@/lib/utils/article-text";
+import {parseFeedPublicationDetails} from "@/lib/utils/feed-summary";
+import {findMatchingKeywordIds, parseRssFeed, RssFetchError, RssItem} from "@/lib/utils/rss-parser";
 import {article, keyword, rssFeed, user, userArticle, userArticleKeyword, userRssFeed} from "@/lib/server/database/schema";
 
 
@@ -182,18 +185,20 @@ export async function fetchAndFilterArticles(targetUserId?: number, onProgress?:
 
     onProgress?.({ phase: "saving", completed, total: feeds.length, failed: result.failedFeeds.length });
 
-    const allLinks = new Set<string>();
-    const authorsByLink = new Map<string, string>();
+    const feedMetadataByLink = new Map<string, Pick<RssItem, "doi" | "authors">>();
 
     for (const { parsed } of parsedById.values()) {
         for (const item of parsed) {
             if (!item.link) continue;
-            allLinks.add(item.link);
-            if (item.authors) authorsByLink.set(item.link, item.authors);
+            const previous = feedMetadataByLink.get(item.link);
+            feedMetadataByLink.set(item.link, {
+                doi: item.doi ?? previous?.doi ?? null,
+                authors: item.authors ?? previous?.authors ?? null,
+            });
         }
     }
 
-    const linkList = Array.from(allLinks);
+    const linkList = Array.from(feedMetadataByLink.keys());
     const existingArticles = linkList.length ?
         await db
             .select()
@@ -202,19 +207,27 @@ export async function fetchAndFilterArticles(targetUserId?: number, onProgress?:
         :
         [];
 
-    const linkToArticleId = new Map<string, number>();
-    for (const a of existingArticles) {
-        linkToArticleId.set(a.link, a.id);
-    }
+    const linkToArticleId = new Map(existingArticles.map((a) => [a.link, a.id]));
+    const existingByLink = new Map(existingArticles.map((a) => [a.link, a]));
 
     db.transaction((tx) => {
         for (const a of existingArticles) {
-            const authors = authorsByLink.get(a.link);
-            if (!authors || a.authors !== null) continue;
+            const feedMetadata = feedMetadataByLink.get(a.link);
+            const doi = a.doi === null ? feedMetadata?.doi : null;
+            const feedAuthors = feedMetadata?.authors;
+            const shouldUseFeedAuthors = feedAuthors && feedAuthors !== a.authors && (a.authors === null || a.crossrefFetched);
+
+            if (!doi && !shouldUseFeedAuthors) continue;
 
             tx.update(article)
-                .set({ authors })
-                .where(and(eq(article.id, a.id), isNull(article.authors)))
+                .set({
+                    doi: doi ? sql`coalesce(${article.doi}, ${doi})` : undefined,
+                    authors: shouldUseFeedAuthors ? sql`case
+                        when ${article.crossrefFetched} then ${feedAuthors}
+                        else coalesce(${article.authors}, ${feedAuthors})
+                    end` : undefined,
+                })
+                .where(eq(article.id, a.id))
                 .run();
         }
     });
@@ -260,12 +273,14 @@ export async function fetchAndFilterArticles(targetUserId?: number, onProgress?:
                 linkToMatchedKeywordIds.set(item.link, set);
 
                 if (!linkToArticleId.has(item.link)) {
+                    const feedMetadata = feedMetadataByLink.get(item.link);
                     pendingArticles.push({
                         link: item.link,
                         title: item.title,
                         rssFeedId: feed.id,
-                        authors: authorsByLink.get(item.link),
-                        summary: cleanHtmlWithRegex(item.description ?? ""),
+                        doi: feedMetadata?.doi,
+                        authors: feedMetadata?.authors,
+                        summary: articleTextFromMarkup(item.description ?? ""),
                     });
                 }
 
@@ -283,6 +298,7 @@ export async function fetchAndFilterArticles(targetUserId?: number, onProgress?:
                 const toInsert = pendingArticles.filter((a) => {
                     if (linkToArticleId.has(a.link)) return false;
                     if (seenLinks.has(a.link)) return false;
+
                     seenLinks.add(a.link);
                     return true;
                 });
@@ -382,6 +398,45 @@ export async function fetchAndFilterArticles(targetUserId?: number, onProgress?:
         });
 
         userToArticleSet.set(user.id, userArticleSet);
+    }
+
+    const articleIdsByDoi = new Map<string, number[]>();
+    for (const [link, articleId] of linkToArticleId) {
+        const existing = existingByLink.get(link);
+        const feedMetadata = feedMetadataByLink.get(link);
+        const doi = existing?.doi ?? feedMetadata?.doi;
+        if (!doi || existing?.crossrefFetched || existing?.authors || feedMetadata?.authors) continue;
+        if (existing && parseFeedPublicationDetails(existing.summary)) continue;
+
+        const articleIds = articleIdsByDoi.get(doi) ?? [];
+        articleIds.push(articleId);
+        articleIdsByDoi.set(doi, articleIds);
+    }
+
+    if (articleIdsByDoi.size > 0) {
+        let checked = 0;
+        const progress = { phase: "enriching", total: articleIdsByDoi.size, failed: result.failedFeeds.length } as const;
+        onProgress?.({ ...progress, completed: checked });
+
+        await Promise.all(Array.from(articleIdsByDoi, async ([doi, articleIds]) => {
+            const metadata = await fetchCrossrefMetadata(doi);
+            if (metadata) {
+                db.update(article)
+                    .set({
+                        crossrefFetched: true,
+                        summary: metadata.summary,
+                        authors: metadata.authors,
+                    })
+                    .where(and(
+                        inArray(article.id, articleIds),
+                        eq(article.doi, doi),
+                        eq(article.crossrefFetched, false),
+                        isNull(article.authors),
+                    ))
+                    .run();
+            }
+            onProgress?.({ ...progress, completed: ++checked });
+        }));
     }
 
     return result;

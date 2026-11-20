@@ -7,6 +7,13 @@ interface RssRefreshStatusProps {
 }
 
 
+const progressLabels = {
+    fetching: "Checking feeds…",
+    saving: "Saving matching articles…",
+    enriching: "Looking up article metadata…",
+};
+
+
 export function RssRefreshStatus({ progress }: RssRefreshStatusProps) {
     return (
         <div role="status" aria-live="polite" aria-atomic="true">
@@ -14,15 +21,15 @@ export function RssRefreshStatus({ progress }: RssRefreshStatusProps) {
                 <div className="mt-4 flex flex-col gap-2 rounded-lg border p-3">
                     <Progress value={progress.completed} max={progress.total || 1}>
                         <ProgressLabel>
-                            {progress.phase === "saving" ? "Saving matching articles…" : "Checking feeds…"}
+                            {progressLabels[progress.phase]}
                         </ProgressLabel>
                         <ProgressValue>
-                            {() => `${progress.completed} / ${progress.total} feeds`}
+                            {() => `${progress.completed} / ${progress.total} ${progress.phase === "enriching" ? "DOIs" : "feeds"}`}
                         </ProgressValue>
                     </Progress>
                     <p className="text-sm text-muted-foreground">
                         {progress.journal ? `Last checked: ${progress.journal}. ` : ""}
-                        {progress.failed > 0 ? `${progress.failed} failed. ` : ""}
+                        {progress.failed > 0 ? `${progress.failed} feed(s) failed. ` : ""}
                         You can keep browsing.
                     </p>
                 </div>

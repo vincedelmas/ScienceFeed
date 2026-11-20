@@ -6,8 +6,8 @@ import {index, integer, sqliteTable, text, uniqueIndex} from "drizzle-orm/sqlite
 
 export const rssFeed = sqliteTable("rss_feed", {
     id: integer().primaryKey({ autoIncrement: true }).notNull(),
-    publisher: text().notNull(),
     journal: text().notNull(),
+    publisher: text().notNull(),
     url: text().unique().notNull(),
     lastFetchDate: text("last_fetch_date"),
     lastFetchError: text("last_fetch_error"),
@@ -30,11 +30,13 @@ export const keyword = sqliteTable("keyword", {
 export const article = sqliteTable("article", {
     id: integer().primaryKey({ autoIncrement: true }).notNull(),
     rssFeedId: integer("rss_feed_id").references(() => rssFeed.id),
+    doi: text(),
     authors: text(),
     link: text().notNull(),
     title: text().notNull(),
     summary: text().notNull(),
     addedDate: text("added_date").default(sql`(CURRENT_TIMESTAMP)`).notNull(),
+    crossrefFetched: integer("crossref_fetched", { mode: "boolean" }).default(false).notNull(),
 }, (table) => [
     uniqueIndex("ux_article_link").on(table.link),
     index("ix_article_rss_feed_id").on(table.rssFeedId),

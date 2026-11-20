@@ -2,9 +2,11 @@ import {cn} from "@/lib/utils/classnames";
 import {formatDateTime} from "@/lib/utils/date";
 import type {UserArticle} from "@/lib/types/types";
 import {Card} from "@/lib/client/components/ui/card";
+import {toast} from "@/lib/client/components/ui/toast";
 import {Button} from "@/lib/client/components/ui/button";
 import {Checkbox} from "@/lib/client/components/ui/checkbox";
-import {Archive, ExternalLink, RotateCcw, Trash2} from "lucide-react";
+import {parseFeedPublicationDetails} from "@/lib/utils/feed-summary";
+import {Archive, Copy, ExternalLink, RotateCcw, Trash2} from "lucide-react";
 import {ArticleSummary} from "@/lib/client/components/articles/article-summary";
 import {ArticleKeywords} from "@/lib/client/components/articles/article-keywords";
 
@@ -29,6 +31,7 @@ export const ArticleCard = (props: ArticleCardProps) => {
         onSelectionClick, archiveIcon = "archive", archiveTitle = "Archive", showDeleteAction = true,
     } = props;
 
+    const { doi } = article;
     const isSelected = selected.includes(article.id);
     const ArchiveIcon = archiveIcon === "restore" ? RotateCcw : Archive;
 
@@ -40,12 +43,12 @@ export const ArticleCard = (props: ArticleCardProps) => {
         ? `${stateLabel} ${formatDateTime(stateDate, { useLocalTz: true })}`
         : `Added ${formatDateTime(article.addedDate, { useLocalTz: true })}`;
 
-    const [, pubDate, feedAuthors] = article.summary.match(/^Publication date:\s*(.+?)\s*Source:\s*.+?\s*Authors?(?:\(s\))?:\s*(.+)$/i) ?? [];
-    const authors = article.authors ?? feedAuthors;
+    const publication = parseFeedPublicationDetails(article.summary);
+    const authors = article.authors ?? publication?.authors;
 
     // Older imports could join section heading to first word
-    const summary = pubDate
-        ? `Publication date: ${pubDate}`
+    const summary = publication
+        ? `Publication date: ${publication.publicationDate}`
         : article.summary.replace(/^(Abstract|Conspectus)(?=[A-Z])/, "$1: ");
 
     return (
@@ -140,8 +143,34 @@ export const ArticleCard = (props: ArticleCardProps) => {
                 />
             }
 
-            <div className="mt-auto -mx-4 flex shrink-0 items-center justify-between gap-3 border-t border-border-subtle bg-surface-muted/50
-            px-4 py-2 sm:-mx-5 sm:px-5">
+            {doi &&
+                <Button
+                    size="sm"
+                    type="button"
+                    variant="ghost"
+                    disabled={isEditing}
+                    title={`Copy DOI ${doi}`}
+                    aria-label={`Copy DOI ${doi}`}
+                    className="mt-auto mb-2 min-w-0 max-w-full self-start"
+                    onClick={async () => {
+                        try {
+                            await navigator.clipboard.writeText(doi);
+                            toast.add({ type: "success", title: "DOI copied" });
+                        }
+                        catch {
+                            toast.add({ type: "error", title: "Could not copy DOI" });
+                        }
+                    }}
+                >
+                    <Copy data-icon="inline-start" aria-hidden="true"/>
+                    <span className="truncate">
+                        DOI: {doi}
+                    </span>
+                </Button>
+            }
+
+            <div className={cn("-mx-4 flex shrink-0 items-center justify-between gap-3 border-t border-border-subtle " +
+                "bg-surface-muted/50 px-4 py-2 sm:-mx-5 sm:px-5", !doi && "mt-auto")}>
                 <div className="flex h-8 min-w-0 flex-1 items-center gap-2">
                     <span
                         title={footerDate}

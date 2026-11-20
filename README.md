@@ -83,3 +83,7 @@ RSS fetching is handled through the CLI, so run it manually or schedule it with 
 are soft-deleted first; the cleanup
 command removes old deleted entries and orphaned articles. Custom feeds must use a public HTTP or HTTPS URL. Redirect targets are checked
 with the same rules.
+
+During a refresh, ScienceFeed uses Crossref to fill in missing authors for articles with a DOI, regardless of publisher. It also saves a
+plain-text abstract if Crossref returns one during that lookup. Click a card's DOI to copy it. Set `CROSSREF_MAILTO` to a contact email
+in `.env` to use Crossref's 10-requests-per-second pool. The public pool allows 5.

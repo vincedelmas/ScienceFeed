@@ -1,4 +1,5 @@
 import {db} from "@/lib/server/database/db";
+import {getArticleDoi} from "@/lib/utils/doi";
 import {createServerFn} from "@tanstack/react-start";
 import {authMiddleware} from "@/lib/server/middlewares/authentication";
 import {and, countDistinct, desc, eq, getTableColumns, inArray, like, or, sql} from "drizzle-orm";
@@ -66,6 +67,7 @@ export const getUserArticles = createServerFn({ method: "GET" })
 
         const articleRows = await db
             .select({
+                doi: article.doi,
                 link: article.link,
                 title: article.title,
                 summary: article.summary,
@@ -104,8 +106,8 @@ export const getUserArticles = createServerFn({ method: "GET" })
             )).groupBy(keyword.id);
 
         return {
-            articles: articleRows,
             keywords: userKeywords,
+            articles: articleRows.map((row) => ({ ...row, doi: row.doi ?? getArticleDoi(row.link) })),
             pagination: {
                 perPage,
                 page: pageNum,
