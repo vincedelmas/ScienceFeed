@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/vincedelmas/ScienceFeed/compare/v1.4.1...v1.5.0) (2026-11-20)
+
+
+### Features
+
+* add DOI copying and Crossref author fallback across feeds ([42decfa](https://github.com/vincedelmas/ScienceFeed/commit/42decfa73505d24dab49950a6aede2ab50aadb73))
+
 ## [1.4.1](https://github.com/vincedelmas/ScienceFeed/compare/v1.4.0...v1.4.1) (2026-11-19)
 
 
